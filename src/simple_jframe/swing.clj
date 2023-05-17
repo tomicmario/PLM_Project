@@ -26,7 +26,7 @@
         y (:y player)
         mouse-x (:x mousePosition)
         mouse-y (:y mousePosition)
-        angle ^Double(calculate-angle mouse-x mouse-y x y)] 
+        angle (- 315 (calculate-angle mouse-x mouse-y x y))] 
     {:x x :y y 
      :vec-x (- (Math/cos angle) (Math/sin angle)) 
      :vec-y (+ (Math/sin angle) (Math/cos angle))}))
