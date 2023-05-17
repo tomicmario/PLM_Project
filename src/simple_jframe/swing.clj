@@ -13,13 +13,13 @@
 (def image (BufferedImage. 500 500 BufferedImage/TYPE_INT_RGB))
 
 (def player (atom {:x 0, :y 0}))
-(def playerVector (atom {:x 0, :y 0}))
+(def player-vector (atom {:x 0, :y 0}))
 (def projectiles (atom []))
 
 (defn calculate-angle [target-x target-y x y]
   (Math/atan2 (- target-x x) (- target-y y)))
 
-(defn createProjectile [player mousePosition] 
+(defn create-projectile [player mousePosition] 
   (let [x (:x player)
         y (:y player)
         mouse-x (:x mousePosition)
@@ -29,33 +29,33 @@
      :vec-x (- (Math/cos angle) (Math/sin angle)) 
      :vec-y (+ (Math/sin angle) (Math/cos angle))}))
 
-(defn setDirection [fn event]
+(defn set-direction [fn event]
   (let  [keycode (.getKeyCode event)]
     (if (= keycode KeyEvent/VK_W) (fn :up) nil) 
     (if (= keycode KeyEvent/VK_S) (fn :down) nil) 
     (if (= keycode KeyEvent/VK_A) (fn :left) nil) 
     (if (= keycode KeyEvent/VK_D) (fn :right) nil)))
   
-(defn updateVector []
+(defn update-vector []
   (let [y (- (if (im/contains :down) 1 0) (if (im/contains :up) 1 0))
         x (- (if (im/contains :right) 1 0) (if (im/contains :left) 1 0))]
-    (swap! playerVector assoc-in [:y] y)
-    (swap! playerVector assoc-in [:x] x)))
+    (swap! player-vector assoc-in [:y] y)
+    (swap! player-vector assoc-in [:x] x)))
 
-(defn movePlayer []
-  (updateVector)
-  (swap! player assoc-in [:y] (+ (:y @playerVector) (:y @player)))
-  (swap! player assoc-in [:x] (+ (:x @playerVector) (:x @player))))
+(defn move-player []
+  (update-vector)
+  (swap! player assoc-in [:y] (+ (:y @player-vector) (:y @player)))
+  (swap! player assoc-in [:x] (+ (:x @player-vector) (:x @player))))
              
 
-(def mouseListener
+(def mouse-listener
   (proxy [MouseInputAdapter] []
     (mouseMoved [#^MouseEvent m]
       (im/update-mouse (.getX m) (.getY m))) 
     (mouseDragged [#^MouseEvent m]
       (im/update-mouse (.getX m) (.getY m)))))
   
-(def clickListener 
+(def click-listener 
   (proxy [MouseInputAdapter] []
     (mousePressed [#^MouseEvent m]
       (im/add-input :click))
@@ -72,8 +72,8 @@
           (.addKeyListener
            (proxy [KeyAdapter] []
              ;(keyTyped [#^KeyEvent e] (handlePress e))
-             (keyPressed [#^KeyEvent e] (setDirection im/add-input e))
-             (keyReleased [#^KeyEvent e] (setDirection im/remove-input e))))) 
+             (keyPressed [#^KeyEvent e] (set-direction im/add-input e))
+             (keyReleased [#^KeyEvent e] (set-direction im/remove-input e))))) 
           
     (doto panel
           (.setSize dimension)
@@ -81,8 +81,8 @@
           (.setBackground Color/WHITE)
           (.setSize dimension)
           (.setPreferredSize dimension)
-          (.addMouseMotionListener mouseListener)
-          (.addMouseListener clickListener)) 
+          (.addMouseMotionListener mouse-listener)
+          (.addMouseListener click-listener)) 
     (.pack frame))
     
 
@@ -91,46 +91,47 @@
     (doto ^Graphics2D graphics
       (.setColor Color/WHITE)
       (.fill (Rectangle2D$Double. 0 0 1000 1000)))))
-  
 
-(defn drawCircle [x, y]
+(defn draw [color shape]
   (let [graphics (.createGraphics image)]
-    (doto ^Graphics2D graphics
-      (.setColor Color/RED)
-      (.fill (Ellipse2D$Double. x y 10 10)))))
+     (doto ^Graphics2D graphics
+       (.setColor color)
+       (.fill shape))))
 
-(defn drawRect [x, y] 
-  (let [graphics (.createGraphics image)]
-    (doto ^Graphics2D graphics
-          (.setColor Color/RED)
-          (.fill (Rectangle2D$Double. x y 10 10)))))
+(defn draw-circle [x y]
+  (let [shape (Ellipse2D$Double. x y 10 10)]
+    (draw Color/RED shape)))
 
-(defn moveProjectile [projectile]
+(defn draw-rect [x y]
+  (let [shape (Rectangle2D$Double. x y 10 10)]
+    (draw Color/RED shape)))
+
+(defn move-projectile [projectile]
   {:x (+ (:x projectile) (:vec-x projectile))
    :y (+ (:y projectile) (:vec-y projectile))
    :vec-x (:vec-x projectile)
    :vec-y (:vec-y projectile)})
 
-(defn moveProjectiles []
+(defn move-projectiles []
   (if (empty? @projectiles) nil
-  (swap! projectiles (fn [proj] (map moveProjectile proj)))))
+  (swap! projectiles (fn [proj] (map move-projectile proj)))))
 
-(defn drawProjectile [projectile]
-  (drawCircle (:x projectile) (:y projectile)))
+(defn draw-projectile [projectile]
+  (draw-circle (:x projectile) (:y projectile)))
 
-(defn drawProjectiles []
+(defn draw-projectiles []
   (doseq [proj @projectiles] 
-     (drawProjectile proj)))
+     (draw-projectile proj)))
 
 (defn display [] 
   ;(println inputState)
   ;(println mousePosition)
   (let [panelGraphics (.getGraphics panel)]
-    (if (contains? @im/inputs :click ) (swap! projectiles conj (createProjectile @player @im/mouse)) nil)
-    (moveProjectiles)
-    (drawProjectiles)
-    (movePlayer)
-    (drawRect (@player :x) (@player :y))
+    (if (contains? @im/inputs :click ) (swap! projectiles conj (create-projectile @player @im/mouse)) nil)
+    (move-projectiles)
+    (draw-projectiles)
+    (move-player)
+    (draw-rect (@player :x) (@player :y))
     (doto ^Graphics2D panelGraphics
       (.drawImage ^BufferedImage image 0 0 nil)))) 
     
