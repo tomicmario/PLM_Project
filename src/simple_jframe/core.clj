@@ -1,6 +1,8 @@
 (ns simple-jframe.core
   (:gen-class)
-  (:require [simple-jframe.swing :as display]))
+  (:require [simple-jframe.swing :as display])
+  (:require [simple-jframe.controler :as controler]))
+
 
 
 ;; original
@@ -9,13 +11,14 @@
   []
   (println "Hello, World!")
 
-  (display/init "Example Display") 
-  (loop [x 0] 
-          (display/clear)
+
+  (display/init "Example Display")
+  (loop [x 0]
+    (controler/move)
+    (display/clear)
           ;(display/drawRect x 10) 
-          (display/display)
-          (Thread/sleep 16)
-          (recur (+ x 1)))
-  )
+    (display/display)
+    (Thread/sleep 16)
+    (recur (+ x 1))))
 
 
