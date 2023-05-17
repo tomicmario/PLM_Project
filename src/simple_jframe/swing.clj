@@ -5,15 +5,13 @@
   (:import [java.awt.geom Rectangle2D$Double Ellipse2D$Double])
   (:import [java.awt.event KeyAdapter KeyEvent MouseEvent])
   (:import [javax.swing.event MouseInputAdapter])
-  (:require [clojure.core.async :as a :refer [<!! >!! <! >!]]))
+  (:require [simple-jframe.inputManager :as im]))
 
 (def ^:private frame (JFrame.))
 (def ^:private panel (JPanel.))
 (def ^:private dimension (Dimension. 500 500))
 (def image (BufferedImage. 500 500 BufferedImage/TYPE_INT_RGB))
-(def ^:private inputState (atom #{}))
-(def ^:private mousePosition (atom {:x 0, :y 0}))
-(get @mousePosition :x)
+
 (def player (atom {:x 0, :y 0}))
 (def playerVector (atom {:x 0, :y 0}))
 (def projectiles (atom []))
@@ -31,37 +29,16 @@
      :vec-x (- (Math/cos angle) (Math/sin angle)) 
      :vec-y (+ (Math/sin angle) (Math/cos angle))}))
 
-
-
-
-(defn inputList []
-  (into [] @inputState))
-
-(defn mouseCoordinates []
-  @mousePosition)
-
-(inputList)
 (defn setDirection [fn event]
   (let  [keycode (.getKeyCode event)]
-    (if (= keycode KeyEvent/VK_W) (swap! inputState fn :up)
-        nil) 
-    (if (= keycode KeyEvent/VK_S) (swap! inputState fn :down)
-        nil) 
-    (if (= keycode KeyEvent/VK_A) (swap! inputState fn :left)
-        nil) 
-    (if (= keycode KeyEvent/VK_D) (swap! inputState fn :right)
-        nil)))
-  
-
-(defn handleRelease [event] 
-  (setDirection disj event))
-  
-(defn handlePress [event] 
-  (setDirection conj event))
+    (if (= keycode KeyEvent/VK_W) (fn :up) nil) 
+    (if (= keycode KeyEvent/VK_S) (fn :down) nil) 
+    (if (= keycode KeyEvent/VK_A) (fn :left) nil) 
+    (if (= keycode KeyEvent/VK_D) (fn :right) nil)))
   
 (defn updateVector []
-  (let [y (- (if (contains? @inputState :down) 1 0) (if (contains? @inputState :up) 1 0))
-        x (- (if (contains? @inputState :right) 1 0) (if (contains? @inputState :left) 1 0))]
+  (let [y (- (if (im/contains :down) 1 0) (if (im/contains :up) 1 0))
+        x (- (if (im/contains :right) 1 0) (if (im/contains :left) 1 0))]
     (swap! playerVector assoc-in [:y] y)
     (swap! playerVector assoc-in [:x] x)))
 
@@ -74,21 +51,17 @@
 (def mouseListener
   (proxy [MouseInputAdapter] []
     (mouseMoved [#^MouseEvent m]
-      (swap! mousePosition assoc-in [:x] (.getX m))
-      (swap! mousePosition assoc-in [:y] (.getY m)))
+      (im/update-mouse (.getX m) (.getY m))) 
     (mouseDragged [#^MouseEvent m]
-      (swap! mousePosition assoc-in [:x] (.getX m))
-      (swap! mousePosition assoc-in [:y] (.getY m)))))
+      (im/update-mouse (.getX m) (.getY m)))))
   
-
 (def clickListener 
   (proxy [MouseInputAdapter] []
     (mousePressed [#^MouseEvent m]
-      (swap! inputState conj :click))
+      (im/add-input :click))
     (mouseReleased [#^MouseEvent m]
-      (swap! inputState disj :click))))
+      (im/remove-input :click))))
   
-
 (defn init [title] 
     (doto frame 
           (.setTitle title)
@@ -99,8 +72,8 @@
           (.addKeyListener
            (proxy [KeyAdapter] []
              ;(keyTyped [#^KeyEvent e] (handlePress e))
-             (keyPressed [#^KeyEvent e] (handlePress e))
-             (keyReleased [#^KeyEvent e] (handleRelease e))))) 
+             (keyPressed [#^KeyEvent e] (setDirection im/add-input e))
+             (keyReleased [#^KeyEvent e] (setDirection im/remove-input e))))) 
           
     (doto panel
           (.setSize dimension)
@@ -153,7 +126,7 @@
   ;(println inputState)
   ;(println mousePosition)
   (let [panelGraphics (.getGraphics panel)]
-    (if (contains? @inputState :click ) (swap! projectiles conj (createProjectile @player @mousePosition)) nil)
+    (if (contains? @im/inputs :click ) (swap! projectiles conj (createProjectile @player @im/mouse)) nil)
     (moveProjectiles)
     (drawProjectiles)
     (movePlayer)
