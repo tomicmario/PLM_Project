@@ -15,6 +15,7 @@
 (def ^:private mousePosition (atom {:x 0, :y 0}))
 (get @mousePosition :x)
 (def player (atom {:x 0, :y 0}))
+(def playerVector (atom {:x 0, :y 0}))
 
 (defn inputList []
   (into [] @inputState))
@@ -42,14 +43,20 @@
 (defn handlePress [event] 
   (setDirection conj event))
   
+(defn updateVector []
+  (let [y (- (if (contains? @inputState :down) 1 0) (if (contains? @inputState :up) 1 0))
+        x (- (if (contains? @inputState :right) 1 0) (if (contains? @inputState :left) 1 0))]
+    (swap! playerVector assoc-in [:y] y)
+    (swap! playerVector assoc-in [:x] x)))
 
-(add-watch inputState :watcher
-  (fn [key atom old-state new-state]
-    (println new-state)
-    (if (contains? new-state :down) (swap! player update :y + 1) nil)
-    (if (contains? new-state :up) (swap! player update :y - 1) nil)
-    (if (contains? new-state :left) (swap! player update :x - 1) nil)
-    (if (contains? new-state :right) (swap! player update :x + 1) nil)))
+(updateVector)
+
+(defn movePlayer []
+  (updateVector)
+  (swap! player assoc-in [:y] (+ (:y @playerVector) (:y @player)))
+  (swap! player assoc-in [:x] (+ (:x @playerVector) (:x @player))))
+
+(movePlayer)
              
 
 (def mouseListener
@@ -112,6 +119,7 @@
   ;(println inputState)
   ;(println mousePosition)
   (let [panelGraphics (.getGraphics panel)] 
+    (movePlayer)
     (drawRect (@player :x) (@player :y))
     (doto ^Graphics2D panelGraphics
       (.drawImage ^BufferedImage image 0 0 nil)))) 
