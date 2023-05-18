@@ -15,8 +15,6 @@
   (display/init "Example Display")
   (loop [x 0]
     (controler/move)
-    (display/clear)
-          ;(display/drawRect x 10) 
     (display/display)
     (Thread/sleep 16)
     (recur (+ x 1))))
