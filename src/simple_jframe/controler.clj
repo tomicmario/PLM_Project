@@ -7,24 +7,27 @@
   (reset! e/projectiles (map (fn [p] (e/move p (:more p))) projectiles)))
 
 (defn update-enemies [enemies player]
-  (reset! e/enemies (map (fn [e] (e/move e (e/gen-vector player e))) enemies)))
+  (reset! e/enemies (map (fn [e] (e/move e (e/gen-vector e player))) enemies)))
 
-(defn update-player [player]
-  (reset! e/player_state (e/move player (im/input-to-vector))))
+(defn update-player [player inputs]
+  (reset! e/player_state (e/move player (im/input-to-vector inputs))))
 
-(comment
-(defn spawn-projectile [player]
-  (if (contains? @im/inputs :click) (swap! e/projectiles conj (e/create-projectile player @im/mouse)) nil))
-)
+(defn spawn-projectiles [player inputs mouse]
+  (if (im/contains inputs :click) (swap! e/projectiles conj (e/create-projectile player mouse) ) nil))
+
+(defn add-enemy [enemies]
+  (if (< (count enemies) 10) (swap! e/enemies conj (e/create-axeman)) nil))
+
 (defn move []
   (let [player @e/player_state
         enemies @e/enemies
-        projectiles @e/projectiles]
+        projectiles @e/projectiles
+        inputs @im/inputs
+        mouse @im/mouse]
+    
     (update-proj projectiles)
     (update-enemies enemies player)
-    (update-player player)))
-
-(update-proj @e/projectiles)
-(update-enemies @e/enemies @e/player_state)
-(update-player @e/player_state)
-(move)
+    (update-player player inputs)
+    (spawn-projectiles player inputs mouse)
+    (add-enemy enemies)
+    nil))

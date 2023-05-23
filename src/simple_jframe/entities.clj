@@ -1,6 +1,5 @@
 (ns simple-jframe.entities
-  (:gen-class) 
-  (:require [simple-jframe.inputManager :as im]))
+  (:gen-class))
 
 (def player_state (atom {:x 0, :y 0 :type :player :health 100}))
 (def enemies (atom []))
@@ -60,10 +59,10 @@
   (let [pos (new-position entity vector)]
   (axe-man (:x pos) (:y pos) (:health entity))))
 
-(defmethod move [:projectile] [projectile vec]
-  (projectile (+ (:x projectile) (:vec-x vec)) 
-              (+ (:y projectile) (:vec-y vec))
-              vec))
+(defmethod move [:projectile] [entity vec]
+  (let [x (+ (:x entity) (:vec-x vec))
+        y (+ (:y entity) (:vec-y vec))]
+  (projectile x y vec)))
 
 (defmethod move [:player] [entity vector]
   (let [pos (new-position entity vector)]

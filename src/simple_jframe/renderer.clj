@@ -31,22 +31,20 @@
   (draw-circle (:x projectile) (:y projectile)))
 
 (defn draw-projectiles [projectiles]
-  (doseq [proj @projectiles]
-    (draw-projectile proj)))
+  (run! draw-projectile projectiles))
 
-(defn draw-ennemy [ennemy]
-  (draw-rect (:x ennemy) (:y ennemy)))
+(defn draw-enemy [enemy]
+  (draw-rect (:x enemy) (:y enemy)))
 
-(defn draw-ennemies [ennemies]
-  (doseq [enn @ennemies]
-    (draw-ennemy enn)))
+(defn draw-enemies [enemies]
+  (run! draw-enemy enemies))
 
 (defn draw-player [player]
-  (draw-rect (:x @player) (:y @player)))
+  (draw-rect (:x player) (:y player)))
 
-(defn render []
+(defn render [] 
   (clear)
-  (draw-projectiles e/projectiles)
-  (draw-player e/player_state)
-  (draw-ennemies e/enemies)
+  (draw-projectiles @e/projectiles)
+  (draw-player @e/player_state)
+  (draw-enemies @e/enemies)
   image)
