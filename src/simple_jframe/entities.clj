@@ -68,3 +68,4 @@
 (defmethod move [:player] [entity vector]
   (let [pos (new-position entity vector)]
   (player (:x pos) (:y pos) (:health entity))))
+
