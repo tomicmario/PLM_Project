@@ -4,6 +4,7 @@
   (:import [java.awt.geom Rectangle2D$Double Ellipse2D$Double])
   (:import [java.awt Color Graphics2D])
   (:require [simple-jframe.player :as p])
+  (:require [simple-jframe.ennemy :as e])
   (:require [simple-jframe.projectile :as proj]))
 
 (def image (BufferedImage. 500 500 BufferedImage/TYPE_INT_RGB))
@@ -35,6 +36,13 @@
   (doseq [proj @projectiles]
     (draw-projectile proj)))
 
+(defn draw-ennemy [ennemy]
+  (draw-rect (:x ennemy) (:y ennemy)))
+
+(defn draw-ennemies [ennemies]
+  (doseq [enn @ennemies]
+    (draw-ennemy enn)))
+
 (defn draw-player [player]
   (draw-rect (:x @player) (:y @player)))
 
@@ -42,4 +50,5 @@
   (clear)
   (draw-projectiles proj/projectiles)
   (draw-player p/player)
+  (draw-ennemies e/ennemies)
   image)
