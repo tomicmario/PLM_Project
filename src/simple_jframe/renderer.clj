@@ -19,28 +19,33 @@
       (.setColor color)
       (.fill shape))))
 
-(defn draw-circle [x y]
-  (let [shape (Ellipse2D$Double. x y 10 10)]
+(defn draw-circle [x y width height]
+  (let [shape (Ellipse2D$Double. x y width height)]
     (draw Color/RED shape)))
 
-(defn draw-rect [x y]
-  (let [shape (Rectangle2D$Double. x y 10 10)]
+(defn draw-rect [x y w h]
+  (let [shape (Rectangle2D$Double. x y w h)]
     (draw Color/RED shape)))
+
+(defn draw-default-entity [entity fn]
+  (let [x (- (:x entity) (/ (:width entity) 2))
+        y (- (:y entity) (/ (:height entity) 2))]
+    (fn x y (:width entity) (:height entity))))
 
 (defn draw-projectile [projectile]
-  (draw-circle (:x projectile) (:y projectile)))
+  (draw-default-entity projectile draw-circle))
+
+(defn draw-enemy [enemy]
+  (draw-default-entity enemy draw-rect))
+
+(defn draw-player [player]
+  (draw-default-entity player draw-rect))
 
 (defn draw-projectiles [projectiles]
   (run! draw-projectile projectiles))
 
-(defn draw-enemy [enemy]
-  (draw-rect (:x enemy) (:y enemy)))
-
 (defn draw-enemies [enemies]
   (run! draw-enemy enemies))
-
-(defn draw-player [player]
-  (draw-rect (:x player) (:y player)))
 
 (defn render [] 
   (clear)
