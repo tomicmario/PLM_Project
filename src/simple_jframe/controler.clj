@@ -3,20 +3,45 @@
   (:require [simple-jframe.entities :as e])
   (:require [simple-jframe.inputManager :as im]))
 
-(defn update-proj [projectiles]
-  (reset! e/projectiles (map (fn [p] (e/move p (:more p))) projectiles)))
+(defn get-state []
+  (let [player @e/player_state
+       enemies @e/enemies
+       projectiles @e/projectiles
+       inputs @im/inputs
+       mouse @im/mouse]
+    {:player player :enemies enemies :projectiles projectiles
+     :inputs inputs :mouse mouse}))
 
-(defn update-enemies [enemies player]
-  (reset! e/enemies (map (fn [e] (e/move e (e/gen-vector e player))) enemies)))
+(defn save-state [state] 
+  (reset! e/projectiles (:projectiles state))
+  (reset! e/enemies (:enemies state))
+  (reset! e/player_state (:player state)))
 
-(defn update-player [player inputs]
-  (reset! e/player_state (e/move player (im/input-to-vector inputs))))
+(defn move-proj [state]
+  (let [proj (map (fn [p] (e/move p (:more p))) (:projectiles state))]
+    (assoc-in state [:projectiles] proj)))
 
-(defn spawn-projectiles [player inputs mouse]
-  (if (im/contains inputs :click) (swap! e/projectiles conj (e/create-projectile player mouse) ) nil))
+(defn move-enemies [state]
+  (let [enemies (map (fn [e] (e/move e (e/gen-vector e (:player state)))) (:enemies state))]
+    (assoc-in state [:enemies] enemies)))
 
-(defn add-enemy [enemies]
-  (if (< (count enemies) 10) (swap! e/enemies conj (e/create-axeman)) nil))
+(defn move-player [state] 
+  (let [vector (im/input-to-vector (:inputs state))
+        player (e/move (:player state) vector)]
+    (assoc-in state [:player] player)))
+
+(defn player-shoot [state]
+  (if (im/contains (:inputs state) :click) 
+    (let [proj (e/create-projectile (:player state) (:mouse state))
+          new-proj (conj (:projectiles state) proj)]
+     (assoc-in state [:projectiles] new-proj)) 
+    state))
+
+(defn add-enemy [state]
+  (if (< (count (:enemies state)) 10) 
+    (let [enemies (conj (:enemies state) (e/create-axeman))]
+     (assoc-in state [:enemies] enemies)) 
+    state))
 
 (defn square-collides? [x1 y1 s1 x2 y2 s2] 
   (and (<= (Math/abs (- x1 x2)) (+ s1 s2))
@@ -59,16 +84,10 @@
        (e/collide enemy projectile)))))
 
 (defn move []
-  (let [player @e/player_state
-        enemies @e/enemies
-        projectiles @e/projectiles
-        inputs @im/inputs
-        mouse @im/mouse]
-    
-    (update-proj projectiles)
-    (update-enemies enemies player)
-    (update-player player inputs)
-    (spawn-projectiles player inputs mouse)
-    (add-enemy enemies)
-    (collide-entities player enemies projectiles)
-    nil))
+  (-> (get-state)
+      (move-proj)
+      (move-player)
+      (move-enemies)
+      (add-enemy)
+      (player-shoot)
+      (save-state)))
