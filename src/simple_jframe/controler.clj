@@ -18,7 +18,7 @@
        inputs @im/inputs
        mouse @im/mouse]
     {:player player :enemies enemies :projectiles projectiles
-     :inputs inputs :mouse mouse :timestamp timestamp}))
+     :inputs inputs :mouse mouse :timestamp timestamp :collided nil}))
 
 (defn save-state [state] 
   (reset! e/projectiles (:projectiles state))
@@ -38,9 +38,8 @@
         player (e/move (:player state) vector)]
     (assoc-in state [:player] player)))
 
-(defn shoot [state]
-  (let [proj (e/create-projectile (:player state) (:mouse state))
-        new-proj (conj (:projectiles state) proj)]
+(defn shoot [state projectile]
+  (let [new-proj (conj (:projectiles state) projectile)]
     (-> state
         (assoc-in [:projectiles] new-proj)
         (assoc-in [:player] (e/update-timestamp (:player state) (:timestamp state))))))
@@ -48,8 +47,8 @@
 (defn player-shoot [state]
   (let [player (:player state)
         timestamp (:timestamp state)]
-  (if (and (im/contains (:inputs state) :click) (can-shoot? player timestamp)) 
-    (shoot state) 
+  (if (and (im/contains (:inputs state) :click) (can-shoot? player timestamp))
+    (shoot state (e/create-projectile (:player state) (:mouse state)))
     state)))
 
 (defn add-enemy [state]
@@ -65,56 +64,66 @@
         (assoc-in [:player] (e/correct-position player bounds))
         (assoc-in [:enemies] (map (fn [e] (e/correct-position e bounds)) enemies)))))
 
-(defn remove-far-projectiles [state]
+(defn clean-projectiles [state]
   (assoc-in state [:projectiles] (filter (fn [e] (close-enough? e)) (:projectiles state))))
 
-(defn square-collides? [x1 y1 s1 x2 y2 s2] 
-  (and (<= (Math/abs (- x1 x2)) (+ s1 s2))
-       (<= (Math/abs (- y1 y2)) (+ s1 s2))))
+(defn clean-projectiles2 [state]
+  (let [test (into #{} (:collided state))]
+     (assoc-in state [:projectiles] (filter (fn [e] (not(contains? test e))) (:projectiles state)))))
 
-(defn square-circle-collides? [sx sy ss cx cy cr]
-  (let [square-boundary-x (if (< cx sx) 
-                           (if (< (- sx ss) cx)
-                             (- sx ss)
-                             cx)
-                           (if (< (+ sx ss) cx)
-                             (+ sx ss)
-                             cx))
-        square-boundary-y (if (< cy sy)
-                           (if (< (- sy ss) cy)
-                             (- sy ss)
-                             cy)
-                           (if (< (+ sy ss) cy)
-                             (+ sy ss)
-                             cy))
-        dx (- cx square-boundary-x)
-        dy (- cy square-boundary-y)
-        distance (Math/sqrt (+ (* dx dx) (* dy dy)))]
-    (<= distance cr)))
+(defn clean-enemies [state]
+  (assoc-in state [:enemies] (filter (fn [e] (< 0 (:health e))) (:enemies state))))
 
-(square-circle-collides? 10 10 10 30 30 10)
+(defn collision-temp [a b]
+  (let [x1 (+ (:x a) (/ (:width a) 2))
+        y1 (+ (:y a) (/ (:width a) 2))
+        x2 (+ (:x b) (/ (:width b) 2))
+        y2 (+ (:y b) (/ (:width b) 2))
+        distance (Math/sqrt (+ (* (- y2 y1) (- y2 y1)) (* (- x2 x1) (- x2 x1))))]
+    (< distance (+ (:width a) (:width b)))))
 
-(defn collide-entities [player enemies projectiles]
-  (doall
-   (let [colliding-enemies (filter (fn [x]
-                                     (square-collides? (:x player) (:y player) 10 (:x x) (:y x) 10))
-                                   enemies)]
-     (map #(e/collide player %) colliding-enemies))
-   (let [colliding (filter (fn [[enemy projectile]]
-                             (square-circle-collides? (:x enemy) (:y enemy) 10 (:x projectile) (:y projectile) 10))
-                           (for [enemy enemies
-                                 projectile projectiles]
-                             [enemy projectile]))]
-     (doseq [[enemy projectile] colliding]
-       (e/collide enemy projectile)))))
+(defn colliding? [a b]
+  ;todo
+  (if (= :player (:type a)) false 
+      (collision-temp a b)))
+
+(defn get-collide-damage [collisions] 
+  (reduce + (map (fn[x] (:health x)) collisions)))
+
+(defn collide [entity projectiles]
+  (let [colliding (filter (fn [e] (colliding? entity e)) projectiles)]
+    {:entity entity :projectiles (if (empty? colliding) nil colliding)}))
+
+
+(defn treat-collision-player [state]
+  (let [player (:player state)
+        projectiles (:projectiles state)
+        collided (collide player projectiles)
+        new-player (e/damage-entity (get-collide-damage (:projectiles collided)) player)]
+    (-> (assoc-in state [:player] new-player)
+        (assoc-in [:collided] (flatten (conj (:collided state) (:projectiles collided)))))))
+
+(defn treat-collision-enemies [state]
+  (let [enemies (:enemies state)
+        projectiles (:projectiles state)
+        collision-data (map (fn [e] (collide e projectiles)) enemies)
+        collided  (filter identity (map :projectiles collision-data))
+        new-enemy (map (fn [e] (e/damage-entity (get-collide-damage (:projectiles e)) (:entity e))) collision-data)]
+    (-> (assoc-in state [:enemies] new-enemy)
+        (assoc-in [:collided] (flatten (conj (:collided state) collided))))))
+
 
 (defn move [timestamp]
-  (-> (get-state timestamp)
+  (-> (get-state timestamp) 
       (move-proj)
       (move-player)
       (move-enemies)
+      (treat-collision-player)
+      (treat-collision-enemies)
       (correct-positions)
       (add-enemy)
       (player-shoot)
-      (remove-far-projectiles)
+      (clean-projectiles)
+      (clean-projectiles2)
+      (clean-enemies)
       (save-state)))

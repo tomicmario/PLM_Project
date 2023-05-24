@@ -16,7 +16,7 @@
   (Math/atan2 (- target-x x) (- target-y y)))
 
 (defn projectile [x y radius speed vector]
-  (entity x y 0 radius radius speed :projectile vector))
+  (entity x y 10 radius radius speed :projectile vector))
 
 (defn axe-man [x y health]
   (entity x y health 30 30 0.2 :axe-man))
@@ -49,6 +49,9 @@
   (let [x (rand-int 500)
         y (rand-int 500)]
     (shooter x y 100)))
+
+(defn damage-entity [damage entity]
+  (assoc-in entity [:health] (- (:health entity) damage)))
 
 (defn new-position [entity vector] 
   {:x (+ (:x entity) (:vec-x vector))
