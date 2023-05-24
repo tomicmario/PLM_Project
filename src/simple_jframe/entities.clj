@@ -53,20 +53,36 @@
   {:x (+ (:x entity) (:vec-x vector))
    :y (+ (:y entity) (:vec-y vector))})
 
-(defmulti move (fn [entity vector] [(:type entity)]))
+(defn apply-position [entity pos] 
+  (-> entity
+      (assoc-in  [:x] (:x pos))
+      (assoc-in [:y] (:y pos))))
 
-(defmethod move [:axe-man] [entity vector] 
+; oui c'est laid, mais apparamment Math/min et max ne prennent pas 2 arguments selon le compilateur ???
+(defn correct-position [entity bounds]
+  (let [x (if (> (:min-x bounds) (:x entity)) (:min-x bounds) (:x entity))
+        y (if (> (:min-y bounds) (:y entity)) (:min-y bounds) (:y entity))
+        new-x (if (< (:max-x bounds) x) (:max-x bounds) x)
+        new-y (if (< (:max-y bounds) y) (:max-y bounds) y)
+        new-pos {:x new-x :y new-y}]
+    (apply-position entity new-pos)))
+
+(defn default-move [entity vector] 
   (let [pos (new-position entity vector)]
-  (axe-man (:x pos) (:y pos) (:health entity))))
+    (apply-position entity pos)))
 
-(defmethod move [:projectile] [entity vec]
-  (let [x (+ (:x entity) (:vec-x vec))
-        y (+ (:y entity) (:vec-y vec))]
-  (projectile x y vec)))
+(defmulti move (fn [entity & [vector]] [(:type entity)]))
+
+(defmethod move [:projectile] [entity]
+  (let [vec (:more entity)
+        pos (new-position entity vec)]
+  (apply-position entity pos)))
 
 (defmethod move [:player] [entity vector]
-  (let [pos (new-position entity vector)]
-  (player (:x pos) (:y pos) (:health entity))))
+  (default-move entity vector))
+
+(defmethod move [:axe-man] [entity vector]
+  (default-move entity vector))
 
 (defmulti collide (fn [entity target] [(:type entity)(:type target)]))
 

@@ -3,6 +3,8 @@
   (:require [simple-jframe.entities :as e])
   (:require [simple-jframe.inputManager :as im]))
 
+(def bounds {:min-x 0 :min-y 0 :max-x 500 :max-y 500})
+
 (defn get-state []
   (let [player @e/player_state
        enemies @e/enemies
@@ -18,7 +20,7 @@
   (reset! e/player_state (:player state)))
 
 (defn move-proj [state]
-  (let [proj (map (fn [p] (e/move p (:more p))) (:projectiles state))]
+  (let [proj (map (fn [p] (e/move p)) (:projectiles state))]
     (assoc-in state [:projectiles] proj)))
 
 (defn move-enemies [state]
@@ -42,6 +44,13 @@
     (let [enemies (conj (:enemies state) (e/create-axeman))]
      (assoc-in state [:enemies] enemies)) 
     state))
+
+(defn correct-positions [state]
+  (let [player (:player state)
+        enemies (:enemies state)]
+    (-> state
+     (assoc-in [:player] (e/correct-position player bounds))
+     (assoc-in [:enemies] (map (fn [e] (e/correct-position e bounds)) enemies)))))
 
 (defn square-collides? [x1 y1 s1 x2 y2 s2] 
   (and (<= (Math/abs (- x1 x2)) (+ s1 s2))
@@ -88,6 +97,7 @@
       (move-proj)
       (move-player)
       (move-enemies)
+      (correct-positions)
       (add-enemy)
       (player-shoot)
       (save-state)))
