@@ -5,14 +5,20 @@
 
 (def bounds {:min-x 0.0 :min-y 0.0 :max-x 500.0 :max-y 500.0})
 
-(defn get-state []
+(defn close-enough? [entity]
+  (> 1000 (max (Math/abs (:x entity)) (Math/abs (:y entity)))))
+
+(defn can-shoot? [entity timestamp]
+  (> timestamp (+ (:last-shot (:more entity)) 5)))
+
+(defn get-state [timestamp]
   (let [player @e/player_state
        enemies @e/enemies
        projectiles @e/projectiles
        inputs @im/inputs
        mouse @im/mouse]
     {:player player :enemies enemies :projectiles projectiles
-     :inputs inputs :mouse mouse}))
+     :inputs inputs :mouse mouse :timestamp timestamp}))
 
 (defn save-state [state] 
   (reset! e/projectiles (:projectiles state))
@@ -32,12 +38,19 @@
         player (e/move (:player state) vector)]
     (assoc-in state [:player] player)))
 
+(defn shoot [state]
+  (let [proj (e/create-projectile (:player state) (:mouse state))
+        new-proj (conj (:projectiles state) proj)]
+    (-> state
+        (assoc-in [:projectiles] new-proj)
+        (assoc-in [:player] (e/update-timestamp (:player state) (:timestamp state))))))
+
 (defn player-shoot [state]
-  (if (im/contains (:inputs state) :click) 
-    (let [proj (e/create-projectile (:player state) (:mouse state))
-          new-proj (conj (:projectiles state) proj)]
-     (assoc-in state [:projectiles] new-proj)) 
-    state))
+  (let [player (:player state)
+        timestamp (:timestamp state)]
+  (if (and (im/contains (:inputs state) :click) (can-shoot? player timestamp)) 
+    (shoot state) 
+    state)))
 
 (defn add-enemy [state]
   (if (< (count (:enemies state)) 10) 
@@ -51,6 +64,9 @@
     (-> state
         (assoc-in [:player] (e/correct-position player bounds))
         (assoc-in [:enemies] (map (fn [e] (e/correct-position e bounds)) enemies)))))
+
+(defn remove-far-projectiles [state]
+  (assoc-in state [:projectiles] (filter (fn [e] (close-enough? e)) (:projectiles state))))
 
 (defn square-collides? [x1 y1 s1 x2 y2 s2] 
   (and (<= (Math/abs (- x1 x2)) (+ s1 s2))
@@ -92,12 +108,13 @@
      (doseq [[enemy projectile] colliding]
        (e/collide enemy projectile)))))
 
-(defn move []
-  (-> (get-state)
+(defn move [timestamp]
+  (-> (get-state timestamp)
       (move-proj)
       (move-player)
       (move-enemies)
       (correct-positions)
       (add-enemy)
       (player-shoot)
+      (remove-far-projectiles)
       (save-state)))

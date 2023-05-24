@@ -5,9 +5,10 @@
 
 
 (defn move []
-  (while true
-    (controler/move)
-    (Thread/sleep 10)))
+  (loop [x 0]
+    (controler/move x)
+    (Thread/sleep 10)
+    (recur (inc x))))
 
 (defn display []
   (display/init "Example Display")

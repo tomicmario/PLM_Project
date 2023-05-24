@@ -6,7 +6,7 @@
    :width width :height height :type type :more more})
 
 (defn player []
-  (entity 0 0 100 20 20 0.5 :player))
+  (entity 0 0 100 20 20 0.5 :player {:last-shot -1000}))
 
 (def player_state (atom (player)))
 (def enemies (atom []))
@@ -58,6 +58,10 @@
   (-> entity
       (assoc-in [:x] (:x pos))
       (assoc-in [:y] (:y pos))))
+
+(defn update-timestamp [entity timestamp]
+  (let [more (:more entity)]
+    (assoc-in entity [:more] (merge more {:last-shot timestamp} ))))
 
 (defn correct-position [entity bounds]
   (let [new-x (min (:max-x bounds) (max (:min-x bounds) (:x entity)))
