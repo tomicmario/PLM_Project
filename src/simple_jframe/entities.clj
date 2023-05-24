@@ -30,7 +30,7 @@
         speed (:speed entity)
         target-x (:x target)
         target-y (:y target)
-        angle (- 315 (calculate-angle target-x target-y x y))
+        angle (- (/ Math/PI 4) (calculate-angle target-x target-y x y))
         vec-x (- (* (Math/cos angle) speed) (* (Math/sin angle) speed))
         vec-y (+ (* (Math/sin angle) speed) (* (Math/cos angle) speed))]
     {:vec-x vec-x :vec-y vec-y}))
