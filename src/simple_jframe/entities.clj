@@ -55,15 +55,12 @@
 
 (defn apply-position [entity pos] 
   (-> entity
-      (assoc-in  [:x] (:x pos))
+      (assoc-in [:x] (:x pos))
       (assoc-in [:y] (:y pos))))
 
-; oui c'est laid, mais apparamment Math/min et max ne prennent pas 2 arguments selon le compilateur ???
 (defn correct-position [entity bounds]
-  (let [x (if (> (:min-x bounds) (:x entity)) (:min-x bounds) (:x entity))
-        y (if (> (:min-y bounds) (:y entity)) (:min-y bounds) (:y entity))
-        new-x (if (< (:max-x bounds) x) (:max-x bounds) x)
-        new-y (if (< (:max-y bounds) y) (:max-y bounds) y)
+  (let [new-x (min (:max-x bounds) (max (:min-x bounds) (:x entity)))
+        new-y (min (:max-y bounds) (max (:min-y bounds) (:y entity)))
         new-pos {:x new-x :y new-y}]
     (apply-position entity new-pos)))
 

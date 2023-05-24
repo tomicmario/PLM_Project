@@ -3,7 +3,7 @@
   (:require [simple-jframe.entities :as e])
   (:require [simple-jframe.inputManager :as im]))
 
-(def bounds {:min-x 0 :min-y 0 :max-x 500 :max-y 500})
+(def bounds {:min-x 0.0 :min-y 0.0 :max-x 500.0 :max-y 500.0})
 
 (defn get-state []
   (let [player @e/player_state
@@ -49,8 +49,8 @@
   (let [player (:player state)
         enemies (:enemies state)]
     (-> state
-     (assoc-in [:player] (e/correct-position player bounds))
-     (assoc-in [:enemies] (map (fn [e] (e/correct-position e bounds)) enemies)))))
+        (assoc-in [:player] (e/correct-position player bounds))
+        (assoc-in [:enemies] (map (fn [e] (e/correct-position e bounds)) enemies)))))
 
 (defn square-collides? [x1 y1 s1 x2 y2 s2] 
   (and (<= (Math/abs (- x1 x2)) (+ s1 s2))
