@@ -68,3 +68,8 @@
   (let [pos (new-position entity vector)]
   (player (:x pos) (:y pos) (:health entity))))
 
+(defmulti collide (fn [entity target] [(:type entity)(:type target)]))
+
+(defmethod collide [:player :axe-man] [p a] (println "collide"))
+
+(defmethod collide [:axe-man :projectile] [a p] (println "kill"))
