@@ -24,22 +24,39 @@
 
 (defn square-circle-collides? [sx sy ss cx cy cr]
   (let [square-boundary-x (if (< cx sx) 
-                           (Math/max (- sx ss) cx)
-                           (Math/min (+ sx ss) cx))
-        square-boundary-y (if (cy sy)
-                           (Math/max (- sy ss) cy)
-                           (Math/min (+ sy ss) cy))
+                           (if (< (- sx ss) cx)
+                             (- sx ss)
+                             cx)
+                           (if (< (+ sx ss) cx)
+                             (+ sx ss)
+                             cx))
+        square-boundary-y (if (< cy sy)
+                           (if (< (- sy ss) cy)
+                             (- sy ss)
+                             cy)
+                           (if (< (+ sy ss) cy)
+                             (+ sy ss)
+                             cy))
         dx (- cx square-boundary-x)
         dy (- cy square-boundary-y)
         distance (Math/sqrt (+ (* dx dx) (* dy dy)))]
     (<= distance cr)))
+
+(square-circle-collides? 10 10 10 30 30 10)
 
 (defn collide-entities [player enemies projectiles]
   (doall
    (let [colliding-enemies (filter (fn [x]
                                      (square-collides? (:x player) (:y player) 10 (:x x) (:y x) 10))
                                    enemies)]
-     (map #(e/collide player %) colliding-enemies))))
+     (map #(e/collide player %) colliding-enemies))
+   (let [colliding (filter (fn [[enemy projectile]]
+                             (square-circle-collides? (:x enemy) (:y enemy) 10 (:x projectile) (:y projectile) 10))
+                           (for [enemy enemies
+                                 projectile projectiles]
+                             [enemy projectile]))]
+     (doseq [[enemy projectile] colliding]
+       (e/collide enemy projectile)))))
 
 (defn move []
   (let [player @e/player_state
