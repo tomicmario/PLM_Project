@@ -75,12 +75,12 @@
   (assoc-in state [:enemies] (filter (fn [e] (< 0 (:health e))) (:enemies state))))
 
 (defn collision-temp [a b]
-  (let [x1 (+ (:x a) (/ (:width a) 2))
-        y1 (+ (:y a) (/ (:width a) 2))
-        x2 (+ (:x b) (/ (:width b) 2))
-        y2 (+ (:y b) (/ (:width b) 2))
+  (let [x1 (+ (:x a))
+        y1 (+ (:y a))
+        x2 (+ (:x b))
+        y2 (+ (:y b))
         distance (Math/sqrt (+ (* (- y2 y1) (- y2 y1)) (* (- x2 x1) (- x2 x1))))]
-    (< distance (+ (:width a) (:width b)))))
+    (< distance (+ (/ (:width a) 2) (/ (:width b) 2)))))
 
 (defn colliding? [a b]
   ;todo
