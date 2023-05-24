@@ -4,19 +4,27 @@
   (:require [simple-jframe.controler :as controler]))
 
 
+(defn move []
+  (while true
+    (controler/move)
+    (Thread/sleep 10)))
+
+(defn display []
+  (display/init "Example Display")
+  (while true
+    (display/display)))
+
+(defn start-threads []
+  (let [move-thread (future (move))
+        display-thread (future (display))]
+    (deref move-thread)
+    (deref display-thread)))
 
 ;; original
 (defn -main
   "I don't do a whole lot."
   []
   (println "Hello, World!")
-
-
-  (display/init "Example Display")
-  (loop [x 0]
-    (controler/move) 
-    (display/display)
-    (Thread/sleep 16)
-    (recur (+ x 1))))
+  (start-threads))
 
 
