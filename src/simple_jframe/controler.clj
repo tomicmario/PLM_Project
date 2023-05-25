@@ -17,10 +17,15 @@
     {:player player :enemies enemies :projectiles projectiles
      :inputs inputs :mouse mouse :timestamp timestamp :collided nil}))
 
-(defn save-state [state] 
+(defn save-state [state]
   (reset! e/projectiles (:projectiles state))
   (reset! e/enemies (:enemies state))
   (reset! e/player_state (:player state)))
+
+(defn update-state [state] 
+  (if (im/contains (:inputs state) :reset)
+    (e/reset-all)
+    (save-state state)))
 
 (defn move-proj [state]
   (let [proj (map (fn [p] (e/move p)) (:projectiles state))]
@@ -124,4 +129,4 @@
       (player-shoot)
       (clean-projectiles)
       (clean-enemies)
-      (save-state)))
+      (update-state)))

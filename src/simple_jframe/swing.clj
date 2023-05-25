@@ -16,7 +16,8 @@
     (if (= keycode KeyEvent/VK_W) (fn :up) nil) 
     (if (= keycode KeyEvent/VK_S) (fn :down) nil) 
     (if (= keycode KeyEvent/VK_A) (fn :left) nil) 
-    (if (= keycode KeyEvent/VK_D) (fn :right) nil)))
+    (if (= keycode KeyEvent/VK_D) (fn :right) nil)
+    (if (= keycode KeyEvent/VK_R) (fn :reset) nil)))
   
 (def mouse-listener
   (proxy [MouseInputAdapter] []

@@ -12,6 +12,14 @@
 (def enemies (atom []))
 (def projectiles (atom []))
 
+(defn reset[]
+  nil)
+
+(defn reset-all []
+  (reset! player_state (player))
+  (reset! enemies  [])
+  (reset! projectiles []))
+
 (defn calculate-angle [target-x target-y x y]
   (Math/atan2 (- target-x x) (- target-y y)))
 
