@@ -8,9 +8,6 @@
 (defn close-enough? [entity]
   (> 1000 (max (Math/abs (:x entity)) (Math/abs (:y entity)))))
 
-(defn can-shoot? [entity timestamp]
-  (> timestamp (+ (:last-shot (:more entity)) 5)))
-
 (defn get-state [timestamp]
   (let [player @e/player_state
        enemies @e/enemies
@@ -44,12 +41,15 @@
         (assoc-in [:projectiles] new-proj)
         (assoc-in [:player] (e/update-timestamp (:player state) (:timestamp state))))))
 
+(defn can-player-shoot?[state]
+  (let [last-player-shot (:last-shot (:more (:player state)))]
+    (and (> (:timestamp state) (+ last-player-shot 5))
+         (im/contains (:inputs state) :click))))
+
 (defn player-shoot [state]
-  (let [player (:player state)
-        timestamp (:timestamp state)]
-  (if (and (im/contains (:inputs state) :click) (can-shoot? player timestamp))
+  (if (can-player-shoot? state)
     (shoot state (e/create-projectile (:player state) (:mouse state)))
-    state)))
+    state))
 
 (defn add-enemy [state]
   (if (< (count (:enemies state)) 10) 
@@ -65,20 +65,17 @@
         (assoc-in [:enemies] (map (fn [e] (e/correct-position e bounds)) enemies)))))
 
 (defn clean-projectiles [state]
-  (assoc-in state [:projectiles] (filter (fn [e] (close-enough? e)) (:projectiles state))))
-
-(defn clean-projectiles2 [state]
-  (let [test (into #{} (:collided state))]
-     (assoc-in state [:projectiles] (filter (fn [e] (not(contains? test e))) (:projectiles state)))))
+  (let  [colliding-proj (into #{} (:collided state))]
+    (-> state 
+        (assoc-in [:projectiles] (filter (fn [e] (close-enough? e)) (:projectiles state)))
+        (assoc-in [:projectiles] (filter (fn [e] (not(contains? colliding-proj e))) (:projectiles state))))))
 
 (defn clean-enemies [state]
   (assoc-in state [:enemies] (filter (fn [e] (< 0 (:health e))) (:enemies state))))
 
 (defn collision-temp [a b]
-  (let [x1 (+ (:x a))
-        y1 (+ (:y a))
-        x2 (+ (:x b))
-        y2 (+ (:y b))
+  (let [x1 (+ (:x a)) y1 (+ (:y a))
+        x2 (+ (:x b)) y2 (+ (:y b))
         distance (Math/sqrt (+ (* (- y2 y1) (- y2 y1)) (* (- x2 x1) (- x2 x1))))]
     (< distance (+ (/ (:width a) 2) (/ (:width b) 2)))))
 
@@ -90,28 +87,30 @@
 (defn get-collide-damage [collisions] 
   (reduce + (map (fn[x] (:health x)) collisions)))
 
-(defn collide [entity projectiles]
+(defn get-collision-data [entity projectiles]
   (let [colliding (filter (fn [e] (colliding? entity e)) projectiles)]
     {:entity entity :projectiles (if (empty? colliding) nil colliding)}))
 
+(defn apply-damage[d]
+  (e/damage-entity (get-collide-damage (:projectiles d)) (:entity d)))
+
+(defn colliding-proj-from-data [d]
+  (filter identity (map :projectiles d)))
 
 (defn treat-collision-player [state]
-  (let [player (:player state)
-        projectiles (:projectiles state)
-        collided (collide player projectiles)
-        new-player (e/damage-entity (get-collide-damage (:projectiles collided)) player)]
-    (-> (assoc-in state [:player] new-player)
-        (assoc-in [:collided] (flatten (conj (:collided state) (:projectiles collided)))))))
+  (let [collided-proj (get-collision-data (:player state) (:projectiles state))
+        updated-player (apply-damage collided-proj)]
+    (-> state
+        (assoc-in [:player] updated-player)
+        (assoc-in [:collided] (flatten (conj (:collided state) (:projectiles collided-proj)))))))
 
 (defn treat-collision-enemies [state]
-  (let [enemies (:enemies state)
-        projectiles (:projectiles state)
-        collision-data (map (fn [e] (collide e projectiles)) enemies)
-        collided  (filter identity (map :projectiles collision-data))
-        new-enemy (map (fn [e] (e/damage-entity (get-collide-damage (:projectiles e)) (:entity e))) collision-data)]
-    (-> (assoc-in state [:enemies] new-enemy)
-        (assoc-in [:collided] (flatten (conj (:collided state) collided))))))
-
+  (let [collision-data (map (fn [e] (get-collision-data e (:projectiles state))) (:enemies state))
+        collided-proj  (colliding-proj-from-data collision-data)
+        updated-enemies (map apply-damage collision-data)]
+    (-> state
+     (assoc-in [:enemies] updated-enemies)
+     (assoc-in [:collided] (flatten (conj (:collided state) collided-proj))))))
 
 (defn move [timestamp]
   (-> (get-state timestamp) 
@@ -124,6 +123,5 @@
       (add-enemy)
       (player-shoot)
       (clean-projectiles)
-      (clean-projectiles2)
       (clean-enemies)
       (save-state)))
