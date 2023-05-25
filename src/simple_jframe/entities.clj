@@ -2,8 +2,8 @@
   (:gen-class))
 
 (defn entity [x y health width height speed type & [more]]
-  {:x x :y y :health health :speed speed
-   :width width :height height :type type :more more})
+  (merge {:x x :y y :health health :speed speed
+   :width width :height height :type type} more))
 
 (defn player []
   (entity 0 0 100 20 20 0.5 :player {:last-shot -1000}))
@@ -11,9 +11,6 @@
 (def player_state (atom (player)))
 (def enemies (atom []))
 (def projectiles (atom []))
-
-(defn reset[]
-  nil)
 
 (defn reset-all []
   (reset! player_state (player))
@@ -43,10 +40,10 @@
         vec-y (+ (* (Math/sin angle) speed) (* (Math/cos angle) speed))]
     {:vec-x vec-x :vec-y vec-y}))
 
-(defn create-projectile [player mousePosition]
-  (let [proj (projectile (:x player) (:y player) 10 5 nil)
+(defn create-projectile [entity mousePosition]
+  (let [proj (projectile (:x entity) (:y entity) 10 5 {:owner (:type entity)})
         vec (gen-vector proj mousePosition)]
-      (assoc-in proj [:more] vec)))
+      (merge proj vec)))
 
 (defn create-axeman []
   (let [x (rand-int 500)
@@ -71,8 +68,7 @@
       (assoc-in [:y] (:y pos))))
 
 (defn update-timestamp [entity timestamp]
-  (let [more (:more entity)]
-    (assoc-in entity [:more] (merge more {:last-shot timestamp} ))))
+    (merge entity {:last-shot timestamp} ))
 
 (defn correct-position [entity bounds]
   (let [new-x (min (:max-x bounds) (max (:min-x bounds) (:x entity)))
@@ -87,7 +83,7 @@
 (defmulti move (fn [entity & [vector]] [(:type entity)]))
 
 (defmethod move [:projectile] [entity]
-  (let [vec (:more entity)
+  (let [vec {:vec-x (:vec-x entity) :vec-y (:vec-y entity)}
         pos (new-position entity vec)]
   (apply-position entity pos)))
 

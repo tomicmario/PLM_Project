@@ -47,7 +47,7 @@
         (assoc-in [:player] (e/update-timestamp (:player state) (:timestamp state))))))
 
 (defn can-player-shoot?[state]
-  (let [last-player-shot (:last-shot (:more (:player state)))]
+  (let [last-player-shot (:last-shot (:player state))]
     (and (> (:timestamp state) (+ last-player-shot 5))
          (im/contains (:inputs state) :click))))
 
@@ -72,7 +72,7 @@
 (defn clean-projectiles [state]
   (let  [colliding-proj (into #{} (:collided state))]
     (-> state 
-        (assoc-in [:projectiles] (filter (fn [e] (close-enough? e)) (:projectiles state)))
+        (assoc-in [:projectiles] (filter close-enough? (:projectiles state)))
         (assoc-in [:projectiles] (filter (fn [e] (not(contains? colliding-proj e))) (:projectiles state))))))
 
 (defn clean-enemies [state]
@@ -85,15 +85,14 @@
     (< distance (+ (/ (:width a) 2) (/ (:width b) 2)))))
 
 (defn colliding? [a b]
-  ;todo
-  (if (= :player (:type a)) false 
-      (collision-temp a b)))
+  (collision-temp a b))
 
 (defn get-collide-damage [collisions] 
   (reduce + (map (fn[x] (:health x)) collisions)))
 
 (defn get-collision-data [entity projectiles]
-  (let [colliding (filter (fn [e] (colliding? entity e)) projectiles)]
+  (let [collide-cond (fn [e] (and (colliding? entity e) (not= :player (:type entity))))
+        colliding (filter collide-cond projectiles)]
     {:entity entity :projectiles (if (empty? colliding) nil colliding)}))
 
 (defn apply-damage[d]
