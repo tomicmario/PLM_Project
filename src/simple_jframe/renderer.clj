@@ -43,13 +43,23 @@
         y (- (:y entity) (/ (:height entity) 2))]
     (fn x y (:width entity) (:height entity))))
 
+(defn get-heath-ratio [entity]
+  (/ (:health entity) 100))
+
+(defn draw-healthbar [entity]
+  (draw-rect (- (:x entity) (/ (:width entity) 2)) (+ (- (:y entity) (:height entity)) 5) (* (get-heath-ratio entity) (:width entity)) (/ (:height entity) 10)))
+
+(defn draw-default-ennemy [ennemy fn]
+  (draw-healthbar ennemy)
+  (draw-default-entity ennemy fn))
+
 (defmulti draw (fn [entity] [(:type entity)]))
 
 (defmethod draw [:projectile] [projectile]
   (draw-default-entity projectile draw-circle))
 
 (defmethod draw [:axe-man] [enemy]
-  (draw-default-entity enemy draw-rect))
+  (draw-default-ennemy enemy draw-rect))
 
 (defmethod draw [:player] [player]
   (draw-default-entity player draw-rect))
