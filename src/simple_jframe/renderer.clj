@@ -2,10 +2,11 @@
   (:gen-class)
   (:import [java.awt.image BufferedImage])
   (:import [java.awt.geom Rectangle2D$Double Ellipse2D$Double])
-  (:import [java.awt Color Graphics2D])
+  (:import [java.awt Color Graphics2D Font])
   (:require [simple-jframe.entities :as e]))
 
 (def image (BufferedImage. 500 500 BufferedImage/TYPE_INT_RGB))
+(def font (Font. "TimesRoman" Font/BOLD 20))
 
 (defn clear []
   (let [graphics (.createGraphics image)]
@@ -26,6 +27,16 @@
 (defn draw-rect [x y w h]
   (let [shape (Rectangle2D$Double. x y w h)]
     (draw-shape Color/RED shape)))
+
+(defn draw-label [x y texte color]
+  (let [graphics (.createGraphics image)]
+    (doto ^Graphics2D graphics
+      (.setPaint color)
+      (.setFont font)
+      (.drawString texte x y))))
+
+(defn draw-interface [player]
+    (draw-label 10 20 (str "Life : " (:health player)) Color/BLACK))
 
 (defn draw-default-entity [entity fn]
   (let [x (- (:x entity) (/ (:width entity) 2))
@@ -50,5 +61,6 @@
     (clear)
     (run! draw projectiles)
     (draw player)
-    (run! draw enemies)
+    (draw-interface player)
+    (run! draw enemies) 
     image))
