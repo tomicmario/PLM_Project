@@ -8,6 +8,9 @@
 (defn close-enough? [entity]
   (> 1000 (max (Math/abs (:x entity)) (Math/abs (:y entity)))))
 
+(defn extract-from-data [type data]
+  (filter identity (map type data)))
+
 (defn get-state [timestamp]
   (let [player @e/player_state
        enemies @e/enemies
@@ -40,11 +43,35 @@
         player (e/move (:player state) vector)]
     (assoc-in state [:player] player)))
 
+
 (defn shoot [state projectile]
   (let [new-proj (conj (:projectiles state) projectile)]
     (-> state
         (assoc-in [:projectiles] new-proj)
         (assoc-in [:player] (e/update-timestamp (:player state) (:timestamp state))))))
+
+(defn close-enough-to-player? [a b]
+  (let [x1 (+ (:x a)) y1 (+ (:y a))
+        x2 (+ (:x b)) y2 (+ (:y b))
+        distance (Math/sqrt (+ (* (- y2 y1) (- y2 y1)) (* (- x2 x1) (- x2 x1))))]
+    (< distance 30)))
+
+;only for axe-man
+(defn get-shoot-data [entity state]
+  (let [timestamp (:timestamp state)
+        player (:player state)]
+  (if (close-enough-to-player? entity player)
+    {:entity (e/update-timestamp entity timestamp) :projectiles (e/create-projectile entity player)}
+    {:entity entity :projectiles nil})
+  ))
+
+(defn enemies-shoot [state]
+  (let [proj-data (map (fn [e] (get-shoot-data e state)) (:enemies state))
+        shot-projectiles (extract-from-data :projectiles proj-data)
+        updated-enemies (extract-from-data :entity proj-data)]
+    (-> state
+        (assoc-in [:enemies] updated-enemies)
+        (assoc-in [:projectiles] (flatten (conj (:projectiles state) shot-projectiles))))))
 
 (defn can-player-shoot?[state]
   (let [last-player-shot (:last-shot (:player state))]
@@ -126,6 +153,7 @@
       (correct-positions)
       (add-enemy)
       (player-shoot)
+      (enemies-shoot)
       (clean-projectiles)
       (clean-enemies)
       (update-state)))

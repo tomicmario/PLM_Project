@@ -20,8 +20,9 @@
 (defn calculate-angle [target-x target-y x y]
   (Math/atan2 (- target-x x) (- target-y y)))
 
-(defn projectile [x y radius speed vector]
-  (entity x y 10 radius radius speed :projectile vector))
+(defn projectile [x y radius speed vector & [max-ttl]]
+  (let [proj-data (merge vector {:max-ttl max-ttl})]
+  (entity x y 10 radius radius speed :projectile proj-data)))
 
 (defn axe-man [x y health]
   (entity x y health 30 30 0.2 :axe-man))
@@ -80,7 +81,7 @@
   (let [pos (new-position entity vector)]
     (apply-position entity pos)))
 
-(defmulti move (fn [entity & [vector]] [(:type entity)]))
+(defmulti move (fn [entity & []] [(:type entity)]))
 
 (defmethod move [:projectile] [entity]
   (let [vec {:vec-x (:vec-x entity) :vec-y (:vec-y entity)}
@@ -92,9 +93,3 @@
 
 (defmethod move [:axe-man] [entity vector]
   (default-move entity vector))
-
-(defmulti collide (fn [entity target] [(:type entity)(:type target)]))
-
-(defmethod collide [:player :axe-man] [p a] (println "collide"))
-
-(defmethod collide [:axe-man :projectile] [a p] (println "kill"))
