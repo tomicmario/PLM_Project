@@ -44,26 +44,34 @@
     (assoc-in state [:player] player)))
 
 
-(defn shoot [state projectile]
-  (let [new-proj (conj (:projectiles state) projectile)]
-    (-> state
-        (assoc-in [:projectiles] new-proj)
-        (assoc-in [:player] (e/update-timestamp (:player state) (:timestamp state))))))
+(defmulti get-target (fn [entity & []] [(:type entity)]))
 
-(defn close-enough-to-player? [a b]
-  (let [x1 (+ (:x a)) y1 (+ (:y a))
+(defmethod get-target [:player] [e state]
+  (:mouse state))
+
+(defmethod get-target [:axe-man] [e state]
+  (:player state))
+
+(defmulti can-shoot? (fn [entity & []] [(:type entity)]))
+
+(defmethod can-shoot? [:player] [entity state]
+  (and (> (:timestamp state) (+ (:last-shot entity) 10))
+       (im/contains (:inputs state) :click)))
+
+(defmethod can-shoot? [:axe-man] [entity state]
+  (let [b (:player state)
+        x1 (+ (:x entity)) y1 (+ (:y entity))
         x2 (+ (:x b)) y2 (+ (:y b))
         distance (Math/sqrt (+ (* (- y2 y1) (- y2 y1)) (* (- x2 x1) (- x2 x1))))]
     (< distance 30)))
 
-;only for axe-man
 (defn get-shoot-data [entity state]
   (let [timestamp (:timestamp state)
-        player (:player state)]
-  (if (close-enough-to-player? entity player)
-    {:entity (e/update-timestamp entity timestamp) :projectiles (e/create-projectile entity player)}
-    {:entity entity :projectiles nil})
-  ))
+        target (get-target entity state)]
+    (if (can-shoot? entity state)
+      (let [updated-entity (e/update-timestamp entity timestamp)]
+        {:entity updated-entity :projectiles (e/create-projectile updated-entity target)})
+      {:entity entity :projectiles nil})))
 
 (defn enemies-shoot [state]
   (let [proj-data (map (fn [e] (get-shoot-data e state)) (:enemies state))
@@ -73,15 +81,11 @@
         (assoc-in [:enemies] updated-enemies)
         (assoc-in [:projectiles] (flatten (conj (:projectiles state) shot-projectiles))))))
 
-(defn can-player-shoot?[state]
-  (let [last-player-shot (:last-shot (:player state))]
-    (and (> (:timestamp state) (+ last-player-shot 5))
-         (im/contains (:inputs state) :click))))
-
 (defn player-shoot [state]
-  (if (can-player-shoot? state)
-    (shoot state (e/create-projectile (:player state) (:mouse state)))
-    state))
+  (let [proj-data (get-shoot-data (:player state) state)]
+    (-> state
+        (assoc-in [:player] (:entity proj-data))
+        (assoc-in [:projectiles] (conj (:projectiles state) (:projectiles proj-data))))))
 
 (defn add-enemy [state]
   (if (< (count (:enemies state)) 10) 

@@ -41,10 +41,18 @@
         vec-y (+ (* (Math/sin angle) speed) (* (Math/cos angle) speed))]
     {:vec-x vec-x :vec-y vec-y}))
 
-(defn create-projectile [entity mousePosition]
+(defmulti create-projectile (fn [entity & []] [(:type entity)]))
+
+(defmethod create-projectile [:player] [entity mousePosition]
   (let [proj (projectile (:x entity) (:y entity) 10 5 {:owner (:type entity)})
         vec (gen-vector proj mousePosition)]
-      (merge proj vec)))
+    (merge proj vec)))
+
+(defmethod create-projectile [:axe-man] [entity target]
+  (let [x (:x entity)
+        y (:y entity)
+        vec (gen-vector entity target)]
+    (projectile x y 50 0 vec (:type entity) (+ (:last-shot entity) 2))))
 
 (defn create-axeman []
   (let [x (rand-int 500)

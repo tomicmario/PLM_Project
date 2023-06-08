@@ -21,7 +21,7 @@
       (.setColor c)
       (.fill shape))))
 
-(defn draw-circle [x y width height  & [color]]
+(defn draw-circle [x y width height & [color]]
   (let [shape (Ellipse2D$Double. x y width height)]
     (draw-shape color shape)))
 
@@ -33,17 +33,16 @@
   (let [graphics (.createGraphics image)]
     (doto ^Graphics2D graphics
       (.setPaint color)
-      (.setFont ^Font font) 
+      (.setFont ^Font font)
       (.drawString ^String text x y))))
 
-
 (defn draw-interface [player]
-    (draw-label 10 20 (str "Life : " (:health player)) Color/BLACK))
+  (draw-label 10 20 (str "Life : " (:health player)) Color/BLACK))
 
-(defn draw-default-entity [entity fn]
+(defn draw-default-entity [entity fn & [color]]
   (let [x (- (:x entity) (/ (:width entity) 2))
         y (- (:y entity) (/ (:height entity) 2))]
-    (fn x y (:width entity) (:height entity))))
+    (fn x y (:width entity) (:height entity) color)))
 
 (defn get-heath-ratio [entity]
   (/ (:health entity) 100))
@@ -53,7 +52,7 @@
         y (+ (- (:y entity) (:height entity)) 5)
         width (* (get-heath-ratio entity) (:width entity))
         c (if (< (:health entity) 25) Color/RED Color/GREEN)]
-   (draw-rect x y width 5 c)))
+    (draw-rect x y width 5 c)))
 
 (defn draw-default-ennemy [ennemy fn]
   (draw-healthbar ennemy)
@@ -62,15 +61,15 @@
 (defmulti draw (fn [entity] [(:type entity)]))
 
 (defmethod draw [:projectile] [projectile]
-  (draw-default-entity projectile draw-circle))
+  (draw-default-entity projectile draw-circle Color/ORANGE))
 
 (defmethod draw [:axe-man] [enemy]
   (draw-default-ennemy enemy draw-rect))
 
 (defmethod draw [:player] [player]
-  (draw-default-entity player draw-rect))
+  (draw-default-entity player draw-rect Color/BLUE))
 
-(defn render [] 
+(defn render []
   (let [projectiles @e/projectiles
         player @e/player_state
         enemies @e/enemies]
@@ -78,5 +77,5 @@
     (run! draw projectiles)
     (draw player)
     (draw-interface player)
-    (run! draw enemies) 
+    (run! draw enemies)
     image))
