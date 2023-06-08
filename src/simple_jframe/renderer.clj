@@ -15,25 +15,27 @@
       (.fill (Rectangle2D$Double. 0 0 1000 1000)))))
 
 (defn draw-shape [color shape]
-  (let [graphics (.createGraphics image)]
+  (let [c (if (nil? color) Color/RED color)
+        graphics (.createGraphics image)]
     (doto ^Graphics2D graphics
-      (.setColor color)
+      (.setColor c)
       (.fill shape))))
 
-(defn draw-circle [x y width height]
+(defn draw-circle [x y width height  & [color]]
   (let [shape (Ellipse2D$Double. x y width height)]
-    (draw-shape Color/RED shape)))
+    (draw-shape color shape)))
 
-(defn draw-rect [x y w h]
+(defn draw-rect [x y w h & [color]]
   (let [shape (Rectangle2D$Double. x y w h)]
-    (draw-shape Color/RED shape)))
+    (draw-shape color shape)))
 
-(defn draw-label [x y texte color]
+(defn draw-label [x y text color]
   (let [graphics (.createGraphics image)]
     (doto ^Graphics2D graphics
       (.setPaint color)
-      (.setFont font)
-      (.drawString texte x y))))
+      (.setFont ^Font font) 
+      (.drawString ^String text x y))))
+
 
 (defn draw-interface [player]
     (draw-label 10 20 (str "Life : " (:health player)) Color/BLACK))
@@ -47,7 +49,11 @@
   (/ (:health entity) 100))
 
 (defn draw-healthbar [entity]
-  (draw-rect (- (:x entity) (/ (:width entity) 2)) (+ (- (:y entity) (:height entity)) 5) (* (get-heath-ratio entity) (:width entity)) (/ (:height entity) 10)))
+  (let [x  (- (:x entity) (/ (:width entity) 2))
+        y (+ (- (:y entity) (:height entity)) 5)
+        width (* (get-heath-ratio entity) (:width entity))
+        c (if (< (:health entity) 25) Color/RED Color/GREEN)]
+   (draw-rect x y width 5 c)))
 
 (defn draw-default-ennemy [ennemy fn]
   (draw-healthbar ennemy)
