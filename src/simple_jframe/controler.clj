@@ -5,6 +5,10 @@
 
 (def bounds {:min-x 0.0 :min-y 0.0 :max-x 500.0 :max-y 500.0})
 
+(defn in-bounds? [entity]
+  (and (>= (:x entity) (:min-x bounds)) (>= (:y entity) (:min-y bounds))
+       (<= (:x entity) (:max-x bounds)) (<= (:y entity) (:max-y bounds))))
+
 (defn extract-from-data [type data]
   (filterv identity (map type data)))
 
@@ -104,19 +108,15 @@
         (assoc :player (e/correct-position player bounds))
         (assoc :enemies (map (fn [e] (e/correct-position e bounds)) enemies)))))
 
-(defn close-enough? [entity]
-  (> 1000 (max (Math/abs (:x entity)) (Math/abs (:y entity)))))
-
 (defn proj-valid? [entity state] 
   (let [ttl (:max-ttl entity)]
     (if (nil? ttl) true (< (:timestamp state) ttl))))
 
 (defn clean-projectiles [state]
-  (-> state
-      (assoc :p-proj (filterv close-enough? (:p-proj state)))
-      (assoc :e-proj (filterv close-enough? (:e-proj state)))
-      (assoc :p-proj (filterv (fn [p] (proj-valid? p state)) (:p-proj state)))
-      (assoc :e-proj (filterv (fn [p] (proj-valid? p state)) (:e-proj state)))))
+  (let [condition (fn [p] (and (proj-valid? p state) (in-bounds? p)))]
+    (-> state
+        (assoc :p-proj (filterv condition (:p-proj state)))
+        (assoc :e-proj (filterv condition (:e-proj state))))))
 
 (defn clean-enemies [state]
   (assoc state :enemies (filterv (fn [e] (< 0 (:health e))) (:enemies state))))
@@ -152,10 +152,9 @@
         (assoc :player updated-player)
         (assoc :e-proj (remove-collided (:e-proj state) collided-proj)))))
 
-
 (defn treat-collision-enemies [state]
   (let [collision-data (map (fn [e] (get-collision-data e (:p-proj state))) (:enemies state))
-        collided-proj  (into [] (extract-from-data :projectiles collision-data))
+        collided-proj  (extract-from-data :projectiles collision-data)
         updated-enemies (map apply-damage collision-data)]
     (-> state
         (assoc :enemies updated-enemies)
