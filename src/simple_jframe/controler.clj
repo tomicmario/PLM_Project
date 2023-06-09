@@ -38,12 +38,12 @@
 
 (defn move-enemies [state]
   (let [enemies (map (fn [e] (e/move e (e/gen-vector e (:player state)))) (:enemies state))]
-    (assoc-in state [:enemies] enemies)))
+    (assoc state :enemies enemies)))
 
 (defn move-player [state]
   (let [vector (im/input-to-vector (:inputs state))
         player (e/move (:player state) vector)]
-    (assoc-in state [:player] player)))
+    (assoc state :player player)))
 
 (defmulti get-target (fn [entity & []] [(:type entity)]))
 
@@ -83,10 +83,13 @@
         (assoc :e-proj (flatten (concat (:e-proj state) shot-projectiles))))))
 
 (defn player-shoot [state]
-  (let [proj-data (get-shoot-data (:player state) state)]
+  (let [proj-data (get-shoot-data (:player state) state)
+        new-proj (:projectiles proj-data)
+        updated-proj (if (nil? new-proj) (:p-proj state)
+                     (conj (:p-proj state) new-proj))]
     (-> state
         (assoc :player (:entity proj-data))
-        (assoc :p-proj (concat (:p-proj state) (extract-from-data :projectiles proj-data))))))
+        (assoc :p-proj updated-proj))))
 
 (defn add-enemy [state]
   (if (< (count (:enemies state)) 10)
@@ -104,15 +107,19 @@
 (defn close-enough? [entity]
   (> 1000 (max (Math/abs (:x entity)) (Math/abs (:y entity)))))
 
-;(defn close-enough? [entity] (if (nil? entity) false true))
+(defn proj-valid? [entity state] 
+  (let [ttl (:max-ttl entity)]
+    (if (nil? ttl) true (< (:timestamp state) ttl))))
 
 (defn clean-projectiles [state]
   (-> state
       (assoc :p-proj (filterv close-enough? (:p-proj state)))
-      (assoc :e-proj (filterv close-enough? (:e-proj state)))))
+      (assoc :e-proj (filterv close-enough? (:e-proj state)))
+      (assoc :p-proj (filterv (fn [p] (proj-valid? p state)) (:p-proj state)))
+      (assoc :e-proj (filterv (fn [p] (proj-valid? p state)) (:e-proj state)))))
 
 (defn clean-enemies [state]
-  (assoc-in state [:enemies] (filterv (fn [e] (< 0 (:health e))) (:enemies state))))
+  (assoc state :enemies (filterv (fn [e] (< 0 (:health e))) (:enemies state))))
 
 (defn collision-temp [a b]
   (let [x1 (+ (:x a)) y1 (+ (:y a))
@@ -127,13 +134,12 @@
   (reduce + (map (fn [x] (:health x)) collisions)))
 
 (defn get-collision-data [entity projectiles]
-  (let [collide-cond (fn [e] (and (colliding? entity e) (not= :player (:type entity))))
+  (let [collide-cond (fn [e] (colliding? entity e))
         colliding (filterv collide-cond projectiles)]
     {:entity entity :projectiles (if (empty? colliding) nil colliding)}))
 
 (defn apply-damage [d]
   (e/damage-entity (get-collide-damage (:projectiles d)) (:entity d)))
-
 
 (defn remove-collided [projectiles collided]
   (let [colliding-proj (into #{} collided)]
@@ -170,4 +176,4 @@
       (clean-enemies)
       (update-state)))
 
-(move 0)
+(println (player-shoot (get-state 0)))

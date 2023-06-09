@@ -47,7 +47,7 @@
 
 (defmethod create-projectile [:player] [entity mousePosition]
   (let [proj (projectile (:x entity) (:y entity) 10 5 nil)
-        vec (gen-vector proj mousePosition)]
+        vec (gen-vector proj mousePosition)] 
     (merge proj vec)))
 
 (defmethod create-projectile [:axe-man] [entity target]
