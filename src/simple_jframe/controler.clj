@@ -147,18 +147,20 @@
 
 (defn treat-collision-player [state]
   (let [collided-proj (get-collision-data (:player state) (:e-proj state))
-        updated-player (apply-damage collided-proj)]
+        updated-player (apply-damage collided-proj)
+        new-proj (remove-collided (:e-proj state) (:projectiles collided-proj))]
     (-> state
         (assoc :player updated-player)
-        (assoc :e-proj (remove-collided (:e-proj state) collided-proj)))))
+        (assoc :e-proj new-proj))))
 
 (defn treat-collision-enemies [state]
   (let [collision-data (map (fn [e] (get-collision-data e (:p-proj state))) (:enemies state))
-        collided-proj  (extract-from-data :projectiles collision-data)
-        updated-enemies (map apply-damage collision-data)]
+        collided-proj  (flatten (extract-from-data :projectiles collision-data))
+        updated-enemies (map apply-damage collision-data)
+        new-proj (remove-collided (:p-proj state) collided-proj)]
     (-> state
         (assoc :enemies updated-enemies)
-        (assoc :p-proj (remove-collided (:p-proj state) collided-proj)))))
+        (assoc :p-proj new-proj))))
 
 (defn move [timestamp]
   (-> (get-state timestamp)
@@ -174,5 +176,3 @@
       (clean-projectiles)
       (clean-enemies)
       (update-state)))
-
-(println (player-shoot (get-state 0)))
