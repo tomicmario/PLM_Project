@@ -10,12 +10,14 @@
 
 (def player_state (atom (player)))
 (def enemies (atom []))
-(def projectiles (atom []))
+(def player-projectiles (atom []))
+(def enemy-projectiles (atom []))
 
 (defn reset-all []
   (reset! player_state (player))
   (reset! enemies  [])
-  (reset! projectiles []))
+  (reset! player-projectiles [])
+  (reset! enemy-projectiles []))
 
 (defn calculate-angle [target-x target-y x y]
   (Math/atan2 (- target-x x) (- target-y y)))
@@ -44,7 +46,7 @@
 (defmulti create-projectile (fn [entity & []] [(:type entity)]))
 
 (defmethod create-projectile [:player] [entity mousePosition]
-  (let [proj (projectile (:x entity) (:y entity) 10 5 {:owner (:type entity)})
+  (let [proj (projectile (:x entity) (:y entity) 10 5 nil)
         vec (gen-vector proj mousePosition)]
     (merge proj vec)))
 
@@ -52,7 +54,7 @@
   (let [x (:x entity)
         y (:y entity)
         vec (gen-vector entity target)]
-    (projectile x y 50 0 vec (:type entity) (+ (:last-shot entity) 2))))
+    (projectile x y 50 0 vec (+ (:last-shot entity) 2))))
 
 (defn create-axeman []
   (let [x (rand-int 500)

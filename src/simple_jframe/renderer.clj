@@ -70,11 +70,13 @@
   (draw-default-entity player draw-rect Color/BLUE))
 
 (defn render []
-  (let [projectiles @e/projectiles
+  (let [enemy-projectiles @e/enemy-projectiles
+        player-projectiles @e/player-projectiles
         player @e/player_state
         enemies @e/enemies]
     (clear)
-    (run! draw projectiles)
+    (run! draw enemy-projectiles)
+    (run! draw player-projectiles)
     (draw player)
     (draw-interface player)
     (run! draw enemies)
