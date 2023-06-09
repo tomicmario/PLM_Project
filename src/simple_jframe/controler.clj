@@ -6,7 +6,7 @@
 (def bounds {:min-x 0.0 :min-y 0.0 :max-x 500.0 :max-y 500.0})
 
 (defn extract-from-data [type data]
-  (filter identity (map type data)))
+  (filterv identity (map type data)))
 
 (defn get-state [timestamp]
   (let [player @e/player_state
@@ -33,8 +33,8 @@
   (let [e-proj (map (fn [p] (e/move p)) (:e-proj state))
         p-proj (map (fn [p] (e/move p)) (:p-proj state))]
     (-> state
-        (assoc-in [:e-proj] e-proj)
-        (assoc-in [:p-proj] p-proj))))
+        (assoc :e-proj e-proj)
+        (assoc :p-proj p-proj))))
 
 (defn move-enemies [state]
   (let [enemies (map (fn [e] (e/move e (e/gen-vector e (:player state)))) (:enemies state))]
@@ -79,27 +79,27 @@
         shot-projectiles (extract-from-data :projectiles proj-data)
         updated-enemies (extract-from-data :entity proj-data)]
     (-> state
-        (assoc-in [:enemies] updated-enemies)
-        (assoc-in [:e-proj] (flatten (concat (:e-proj state) shot-projectiles))))))
+        (assoc :enemies updated-enemies)
+        (assoc :e-proj (flatten (concat (:e-proj state) shot-projectiles))))))
 
 (defn player-shoot [state]
   (let [proj-data (get-shoot-data (:player state) state)]
     (-> state
-        (assoc-in [:player] (:entity proj-data))
-        (assoc-in [:p-proj] (concat (:p-proj state) (extract-from-data :projectiles proj-data))))))
+        (assoc :player (:entity proj-data))
+        (assoc :p-proj (concat (:p-proj state) (extract-from-data :projectiles proj-data))))))
 
 (defn add-enemy [state]
   (if (< (count (:enemies state)) 10)
     (let [enemies (conj (:enemies state) (e/create-axeman))]
-      (assoc-in state [:enemies] enemies))
+      (assoc state :enemies enemies))
     state))
 
 (defn correct-positions [state]
   (let [player (:player state)
         enemies (:enemies state)]
     (-> state
-        (assoc-in [:player] (e/correct-position player bounds))
-        (assoc-in [:enemies] (map (fn [e] (e/correct-position e bounds)) enemies)))))
+        (assoc :player (e/correct-position player bounds))
+        (assoc :enemies (map (fn [e] (e/correct-position e bounds)) enemies)))))
 
 (defn close-enough? [entity]
   (> 1000 (max (Math/abs (:x entity)) (Math/abs (:y entity)))))
@@ -108,11 +108,11 @@
 
 (defn clean-projectiles [state]
   (-> state
-      (assoc-in [:p-proj] (filter close-enough? (:p-proj state)))
-      (assoc-in [:e-proj] (filter close-enough? (:e-proj state)))))
+      (assoc :p-proj (filterv close-enough? (:p-proj state)))
+      (assoc :e-proj (filterv close-enough? (:e-proj state)))))
 
 (defn clean-enemies [state]
-  (assoc-in state [:enemies] (filter (fn [e] (< 0 (:health e))) (:enemies state))))
+  (assoc-in state [:enemies] (filterv (fn [e] (< 0 (:health e))) (:enemies state))))
 
 (defn collision-temp [a b]
   (let [x1 (+ (:x a)) y1 (+ (:y a))
@@ -128,34 +128,32 @@
 
 (defn get-collision-data [entity projectiles]
   (let [collide-cond (fn [e] (and (colliding? entity e) (not= :player (:type entity))))
-        colliding (filter collide-cond projectiles)]
+        colliding (filterv collide-cond projectiles)]
     {:entity entity :projectiles (if (empty? colliding) nil colliding)}))
 
 (defn apply-damage [d]
   (e/damage-entity (get-collide-damage (:projectiles d)) (:entity d)))
 
-(defn colliding-proj-from-data [d]
-  (filter identity (map :projectiles d)))
 
 (defn remove-collided [projectiles collided]
   (let [colliding-proj (into #{} collided)]
-    (into [] (filter (fn [p] (not (contains? colliding-proj p))) projectiles))))
+    (filterv (fn [p] (not (contains? colliding-proj p))) projectiles)))
 
 (defn treat-collision-player [state]
   (let [collided-proj (get-collision-data (:player state) (:e-proj state))
         updated-player (apply-damage collided-proj)]
     (-> state
-        (assoc-in [:player] updated-player)
-        (assoc-in [:e-proj] (remove-collided (:e-proj state) collided-proj)))))
+        (assoc :player updated-player)
+        (assoc :e-proj (remove-collided (:e-proj state) collided-proj)))))
 
 
 (defn treat-collision-enemies [state]
   (let [collision-data (map (fn [e] (get-collision-data e (:p-proj state))) (:enemies state))
-        collided-proj  (into [] (colliding-proj-from-data collision-data))
+        collided-proj  (into [] (extract-from-data :projectiles collision-data))
         updated-enemies (map apply-damage collision-data)]
     (-> state
-        (assoc-in [:enemies] updated-enemies)
-        (assoc-in [:p-proj] (remove-collided (:p-proj state) collided-proj)))))
+        (assoc :enemies updated-enemies)
+        (assoc :p-proj (remove-collided (:p-proj state) collided-proj)))))
 
 (defn move [timestamp]
   (-> (get-state timestamp)

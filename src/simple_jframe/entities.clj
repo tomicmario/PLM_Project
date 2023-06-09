@@ -67,7 +67,7 @@
     (shooter x y 100)))
 
 (defn damage-entity [damage entity]
-  (assoc-in entity [:health] (- (:health entity) damage)))
+  (assoc entity :health (- (:health entity) damage)))
 
 (defn new-position [entity vector] 
   {:x (+ (:x entity) (:vec-x vector))
@@ -75,8 +75,8 @@
 
 (defn apply-position [entity pos] 
   (-> entity
-      (assoc-in [:x] (:x pos))
-      (assoc-in [:y] (:y pos))))
+      (assoc :x (:x pos))
+      (assoc :y (:y pos))))
 
 (defn update-timestamp [entity timestamp]
     (merge entity {:last-shot timestamp} ))
