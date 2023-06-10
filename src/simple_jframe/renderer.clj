@@ -3,7 +3,7 @@
   (:import [java.awt.image BufferedImage])
   (:import [java.awt.geom Rectangle2D$Double Ellipse2D$Double])
   (:import [java.awt Color Graphics2D Font])
-  (:require [simple-jframe.state :as s]))
+  (:require [simple-jframe.state :as state]))
 
 (def image (BufferedImage. 500 500 BufferedImage/TYPE_INT_RGB))
 (def font (Font. "TimesRoman" Font/BOLD 20))
@@ -70,15 +70,11 @@
   (draw-default-entity player draw-rect Color/BLUE))
 
 (defn render []
-  (let [state (s/get-state)
-        enemy-projectiles (:e-proj state)
-        player-projectiles (:p-proj state)
-        player (:player state)
-        enemies (:enemies state)]
+  (let [current-state @state/entity-state]
     (clear)
-    (run! draw enemy-projectiles)
-    (run! draw player-projectiles)
-    (draw player)
-    (draw-interface player)
-    (run! draw enemies)
+    (run! draw (:e-proj current-state))
+    (run! draw (:p-proj current-state))
+    (draw (:player current-state))
+    (draw-interface (:player current-state))
+    (run! draw (:enemies current-state))
     image))

@@ -6,7 +6,7 @@
 
 (defn move []
   (loop [x 0]
-    (controler/move x)
+    (controler/next-tick)
     (Thread/sleep 10)
     (recur (inc x))))
 
