@@ -12,12 +12,15 @@
 (defn extract-from-data [type data]
   (filterv identity (map type data)))
 
+(defn distance [x1 y1 x2 y2]
+  (Math/sqrt (+ (* (- y2 y1) (- y2 y1)) (* (- x2 x1) (- x2 x1)))))
+
 ; COLLISION HANDLING 
 (defn colliding? [a b]
   (let [x1 (+ (:x a)) y1 (+ (:y a))
         x2 (+ (:x b)) y2 (+ (:y b))
-        distance (Math/sqrt (+ (* (- y2 y1) (- y2 y1)) (* (- x2 x1) (- x2 x1))))]
-    (< distance (+ (/ (:width a) 2) (/ (:width b) 2)))))
+        dist (distance x1 y1 x2 y2)]
+    (< dist (+ (/ (:width a) 2) (/ (:width b) 2)))))
 
 (defn get-collide-damage [collisions]
   (reduce + (map (fn [x] (:health x)) collisions)))
@@ -60,7 +63,6 @@
 (defn proj-valid? [entity state]
   (let [ttl (:max-ttl entity)]
     (if (nil? ttl) true (< (:timestamp state) ttl))))
-
 
 (defn clean-projectiles [state]
   (let [condition (fn [p] (and (proj-valid? p state) (in-bounds? p)))]
@@ -130,9 +132,8 @@
 (defmethod can-shoot? [:axe-man] [entity state]
   (let [b (:player state)
         x1 (+ (:x entity)) y1 (+ (:y entity))
-        x2 (+ (:x b)) y2 (+ (:y b))
-        distance (Math/sqrt (+ (* (- y2 y1) (- y2 y1)) (* (- x2 x1) (- x2 x1))))]
-    (< distance 30)))
+        x2 (+ (:x b)) y2 (+ (:y b))]
+    (< (distance x1 y1 x2 y2) 30)))
 
 (defn get-shoot-data [entity state]
   (let [timestamp (:timestamp state)
@@ -154,7 +155,7 @@
   (let [proj-data (get-shoot-data (:player state) state)
         new-proj (:projectiles proj-data)
         updated-proj (if (nil? new-proj) (:p-proj state)
-                     (conj (:p-proj state) new-proj))]
+                         (conj (:p-proj state) new-proj))]
     (-> state
         (assoc :player (:entity proj-data))
         (assoc :p-proj updated-proj))))
@@ -171,6 +172,7 @@
       (assoc state :enemies enemies))
     state))
 
+; ENTIRE FRAME LOGIC
 (defn next-tick []
   (-> (state/get-state)
       (treat-collision)

@@ -13,19 +13,19 @@
 
 (defn set-direction [fn event]
   (let  [keycode (.getKeyCode event)]
-    (if (= keycode KeyEvent/VK_W) (fn :up) nil) 
-    (if (= keycode KeyEvent/VK_S) (fn :down) nil) 
-    (if (= keycode KeyEvent/VK_A) (fn :left) nil) 
+    (if (= keycode KeyEvent/VK_W) (fn :up) nil)
+    (if (= keycode KeyEvent/VK_S) (fn :down) nil)
+    (if (= keycode KeyEvent/VK_A) (fn :left) nil)
     (if (= keycode KeyEvent/VK_D) (fn :right) nil)
     (if (= keycode KeyEvent/VK_R) (fn :reset) nil)))
-  
+
 (def mouse-listener
   (proxy [MouseInputAdapter] []
     (mouseMoved [#^MouseEvent m]
-      (im/update-mouse (.getX m) (.getY m))) 
+      (im/update-mouse (.getX m) (.getY m)))
     (mouseDragged [#^MouseEvent m]
       (im/update-mouse (.getX m) (.getY m)))))
-  
+
 (def click-listener
   (proxy [MouseInputAdapter] []
     (mousePressed [#^MouseEvent m]
@@ -38,7 +38,7 @@
     ;(keyTyped [#^KeyEvent e] (handlePress e))
     (keyPressed [#^KeyEvent e] (set-direction im/add-input e))
     (keyReleased [#^KeyEvent e] (set-direction im/remove-input e))))
-  
+
 (defn init [title]
   (doto frame
     (.setTitle title)
@@ -57,11 +57,9 @@
     (.addMouseMotionListener mouse-listener)
     (.addMouseListener click-listener))
   (.pack frame))
-    
 
-(defn display [] 
+(defn display []
   (let [panelGraphics (.getGraphics panel)
-        image (r/render)] 
+        image (r/render)]
     (doto ^Graphics2D panelGraphics
-      (.drawImage ^BufferedImage image 0 0 nil)))) 
-  
+      (.drawImage ^BufferedImage image 0 0 nil))))
