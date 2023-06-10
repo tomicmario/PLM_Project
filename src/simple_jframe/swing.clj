@@ -4,7 +4,7 @@
   (:import [java.awt.image BufferedImage])
   (:import [java.awt.event KeyAdapter KeyEvent MouseEvent])
   (:import [javax.swing.event MouseInputAdapter])
-  (:require [simple-jframe.inputManager :as im])
+  (:require [simple-jframe.state :as im])
   (:require [simple-jframe.renderer :as r]))
 
 (def ^:private frame (JFrame.))

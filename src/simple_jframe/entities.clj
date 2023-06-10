@@ -5,19 +5,8 @@
   (merge {:x x :y y :health health :speed speed
    :width width :height height :type type} more))
 
-(defn player []
+(defn default-player []
   (entity 0 0 100 20 20 0.5 :player {:last-shot -1000}))
-
-(def player_state (atom (player)))
-(def enemies (atom []))
-(def player-projectiles (atom []))
-(def enemy-projectiles (atom []))
-
-(defn reset-all []
-  (reset! player_state (player))
-  (reset! enemies  [])
-  (reset! player-projectiles [])
-  (reset! enemy-projectiles []))
 
 (defn calculate-angle [target-x target-y x y]
   (Math/atan2 (- target-x x) (- target-y y)))

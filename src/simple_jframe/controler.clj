@@ -1,7 +1,7 @@
 (ns simple-jframe.controler
   (:gen-class)
   (:require [simple-jframe.entities :as e])
-  (:require [simple-jframe.inputManager :as im]))
+  (:require [simple-jframe.state :as state]))
 
 (def bounds {:min-x 0.0 :min-y 0.0 :max-x 500.0 :max-y 500.0})
 
@@ -11,27 +11,6 @@
 
 (defn extract-from-data [type data]
   (filterv identity (map type data)))
-
-(defn get-state [timestamp]
-  (let [player @e/player_state
-        enemies @e/enemies
-        enemy-projectiles @e/enemy-projectiles
-        player-proj @e/player-projectiles
-        inputs @im/inputs
-        mouse @im/mouse]
-    {:player player :enemies enemies :e-proj enemy-projectiles :p-proj player-proj
-     :inputs inputs :mouse mouse :timestamp timestamp}))
-
-(defn save-state [state]
-  (reset! e/player-projectiles (into [] (:p-proj state)))
-  (reset! e/enemy-projectiles (into [] (:e-proj state)))
-  (reset! e/enemies (into [] (:enemies state)))
-  (reset! e/player_state (:player state)))
-
-(defn update-state [state]
-  (if (im/contains (:inputs state) :reset)
-    (e/reset-all)
-    (save-state state)))
 
 (defn move-proj [state]
   (let [e-proj (map (fn [p] (e/move p)) (:e-proj state))
@@ -44,8 +23,13 @@
   (let [enemies (map (fn [e] (e/move e (e/gen-vector e (:player state)))) (:enemies state))]
     (assoc state :enemies enemies)))
 
+(defn input-to-vector [inputs]
+  (let [y (- (if (contains? inputs :down) 1 0) (if (contains? inputs :up) 1 0))
+        x (- (if (contains? inputs :right) 1 0) (if (contains? inputs :left) 1 0))]
+    {:vec-x x :vec-y y}))
+
 (defn move-player [state]
-  (let [vector (im/input-to-vector (:inputs state))
+  (let [vector (input-to-vector (:inputs state))
         player (e/move (:player state) vector)]
     (assoc state :player player)))
 
@@ -61,7 +45,7 @@
 
 (defmethod can-shoot? [:player] [entity state]
   (and (> (:timestamp state) (+ (:last-shot entity) 10))
-       (im/contains (:inputs state) :click)))
+       (contains? (:inputs state) :click)))
 
 (defmethod can-shoot? [:axe-man] [entity state]
   (let [b (:player state)
@@ -121,14 +105,11 @@
 (defn clean-enemies [state]
   (assoc state :enemies (filterv (fn [e] (< 0 (:health e))) (:enemies state))))
 
-(defn collision-temp [a b]
+(defn colliding? [a b]
   (let [x1 (+ (:x a)) y1 (+ (:y a))
         x2 (+ (:x b)) y2 (+ (:y b))
         distance (Math/sqrt (+ (* (- y2 y1) (- y2 y1)) (* (- x2 x1) (- x2 x1))))]
     (< distance (+ (/ (:width a) 2) (/ (:width b) 2)))))
-
-(defn colliding? [a b]
-  (collision-temp a b))
 
 (defn get-collide-damage [collisions]
   (reduce + (map (fn [x] (:health x)) collisions)))
@@ -163,7 +144,7 @@
         (assoc :p-proj new-proj))))
 
 (defn move [timestamp]
-  (-> (get-state timestamp)
+  (-> (state/get-state timestamp)
       (move-proj)
       (move-player)
       (move-enemies)
@@ -175,4 +156,4 @@
       (enemies-shoot)
       (clean-projectiles)
       (clean-enemies)
-      (update-state)))
+      (state/update-state)))
