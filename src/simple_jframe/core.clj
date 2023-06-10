@@ -3,29 +3,29 @@
   (:require [simple-jframe.swing :as display])
   (:require [simple-jframe.controler :as controler]))
 
+(def frame-time-ms 10)
 
-(defn move []
-  (loop [x 0]
-    (controler/next-tick)
-    (Thread/sleep 10)
-    (recur (inc x))))
+(defn simulate-game []
+  (let [last-render-time (atom (System/currentTimeMillis))]
+    (while true
+      (let [current-time (System/currentTimeMillis)]
+        (when (>= (- current-time @last-render-time) frame-time-ms)
+          (controler/next-tick)
+          (reset! last-render-time current-time))))))
 
-(defn display []
-  (display/init "Example Display")
+(defn render-game []
+  (display/init "Projet PLM")
   (while true
     (display/display)))
 
 (defn start-threads []
-  (let [move-thread (future (move))
-        display-thread (future (display))]
+  (let [move-thread (future (simulate-game))
+        display-thread (future (render-game))]
     (deref move-thread)
     (deref display-thread)))
 
-;; original
-(defn -main
-  "I don't do a whole lot."
-  []
-  (println "Hello, World!")
+;; launch the game
+(defn -main []
   (start-threads))
 
 
