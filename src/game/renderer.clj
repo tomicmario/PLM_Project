@@ -110,7 +110,7 @@
     (run! (fn [e] (draw-healthbar image e)) enemies)
     (-> image
         (draw-healthbar player)
-        (draw-label 10 20 (str "Life : " (:health player)) Color/BLACK)
+        (draw-label 10 20 (str "Score : " (:score state)) Color/BLACK)
         (display-game-over state))))
 
 (defn render [x y]

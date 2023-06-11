@@ -5,8 +5,8 @@
   (:import [java.awt.event KeyAdapter KeyEvent MouseEvent])
   (:import [javax.swing.event MouseInputAdapter])
   (:require [game.state :as im]
-            [game.swing :as display])
-  (:require [game.renderer :as r]))
+            [game.swing :as display]
+            [game.renderer :as r]))
 
 (def ^:private frame (JFrame.))
 (def ^:private panel (JPanel.))

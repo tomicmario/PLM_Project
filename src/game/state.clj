@@ -8,12 +8,14 @@
 (def inputs (atom #{}))
 (def mouse (atom {:x 0, :y 0}))
 
-(def entity-state (atom {:player (e/default-player) :p-proj [] :e-proj [] 
-                         :enemies [] :timestamp 0 :bounds bounds}))
+(defn default-state []
+  {:player (e/default-player) :p-proj [] :e-proj []
+   :enemies [] :timestamp 0 :bounds bounds :score 0})
+
+(def entity-state (atom (default-state)))
 
 (defn default-entity-state []
-  (reset! entity-state {:player (e/default-player) :p-proj [] :e-proj [] 
-                        :enemies [] :timestamp 0 :bounds bounds}))
+  (reset! entity-state (default-state)))
 
 (defn get-state []
   (let [inputs @inputs
@@ -40,7 +42,7 @@
   (let [new-state {:e-proj (:e-proj state) :p-proj (:p-proj state)
                    :player (:player state) :enemies (:enemies state)
                    :timestamp (inc (:timestamp state))
-                   :bounds (:bounds state)}]
+                   :bounds (:bounds state) :score (:score state)}]
     (reset! entity-state new-state)))
 
 (defn update-state [state]

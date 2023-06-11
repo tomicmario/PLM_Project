@@ -1,7 +1,7 @@
 (ns game.core
   (:gen-class)
-  (:require [game.swing :as display])
-  (:require [game.controler :as controler]))
+  (:require [game.swing :as display]
+            [game.controler :as controler]))
 
 (def frame-time-ms 10)
 

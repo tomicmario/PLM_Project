@@ -1,7 +1,7 @@
 (ns game.controler
   (:gen-class)
-  (:require [game.entities :as e])
-  (:require [game.state :as state]))
+  (:require [game.entities :as e]
+            [game.state :as state]))
 
 (defn in-bounds? [entity state]
   (let [bounds (:bounds state)]
@@ -72,7 +72,12 @@
         (assoc :e-proj (filterv condition (:e-proj state))))))
 
 (defn clean-enemies [state]
-  (assoc state :enemies (filterv (fn [e] (< 0 (:health e))) (:enemies state))))
+  (let [updated-enemies (filterv (fn [e] (< 0 (:health e))) (:enemies state))
+        killed (- (count (:enemies state)) (count updated-enemies)) 
+        new-score (+ (:score state) killed)]
+    (-> state
+        (assoc :enemies updated-enemies)
+        (assoc :score new-score))))
 
 (defn remove-dead-entities [state]
   (-> state
