@@ -175,9 +175,28 @@
       (enemies-shoot)))
 
 ; SPAWN LOGIC
+(defn spawn-coordinates [x y player exclusion]
+  (let [new-x (if (< (- (:x player) exclusion) x) x
+                (+ x exclusion))
+        new-y (if (< (- (:y player) exclusion) y) y
+                (+ y exclusion))]
+    {:x new-x :y new-y}))
+
+(defn rand-coordinates [state]
+  ; returns a coordinate not present withing 50 units from the player
+  (let [exclusion 25 ;exclusion radius
+        bounds (:bounds state)
+        player (:player state)
+        rand-x (rand (- (:max-x bounds) (* exclusion 2)))
+        rand-y (rand (- (:max-y bounds) (* exclusion 2)))]
+    (spawn-coordinates rand-x rand-y player exclusion)))
+
 (defn add-enemy [state]
   (if (< (count (:enemies state)) 10)
-    (let [enemies (conj (:enemies state) (e/create-axeman))]
+    (let [en-fn (e/random-enemy) ; enemy create function
+          rand-cor (rand-coordinates state)
+          enemy (en-fn (:x rand-cor) (:y rand-cor))
+          enemies (conj (:enemies state) enemy)]
       (assoc state :enemies enemies))
     state))
 

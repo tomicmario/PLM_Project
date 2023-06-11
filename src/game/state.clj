@@ -5,11 +5,16 @@
 
 (def bounds {:min-x 0.0 :min-y 0.0 :max-x 500.0 :max-y 500.0})
 
+(defn default-player []
+  (let [x (/ (:max-x bounds) 2)
+        y (/ (:max-y bounds) 2)]
+  (e/default-player x y)))
+
 (def inputs (atom #{}))
 (def mouse (atom {:x 0, :y 0}))
 
 (defn default-state []
-  {:player (e/default-player) :p-proj [] :e-proj []
+  {:player (default-player) :p-proj [] :e-proj []
    :enemies [] :timestamp 0 :bounds bounds :score 0})
 
 (def entity-state (atom (default-state)))

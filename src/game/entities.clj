@@ -5,8 +5,8 @@
   (merge {:x x :y y :health health :speed speed
           :width width :height height :type type} more))
 
-(defn default-player []
-  (entity 0 0 100 20 20 0.5 :player {:last-shot -1000}))
+(defn default-player [x y]
+  (entity x y 100 20 20 0.5 :player {:last-shot -1000}))
 
 (defn calculate-angle [target-x target-y x y]
   (Math/atan2 (- target-x x) (- target-y y)))
@@ -15,11 +15,14 @@
   (let [proj-data (merge vector {:max-ttl max-ttl})]
     (entity x y 10 radius radius speed :projectile proj-data)))
 
-(defn axe-man [x y health]
-  (entity x y health 30 30 0.2 :axe-man))
+(defn axe-man [x y]
+  (entity x y 100 30 30 0.2 :axe-man))
 
-(defn shooter [x y health]
-  (entity x y health 10 10 0.5 :shooter))
+(defn shooter [x y]
+  (entity x y 100 10 10 0.5 :shooter))
+
+(defn random-enemy []
+  (rand-nth [axe-man]))
 
 (defn gen-vector [entity target]
   (let [x (:x entity)
@@ -44,16 +47,6 @@
         y (:y entity)
         vec (gen-vector entity target)]
     (projectile x y 50 0 vec (+ (:last-shot entity) 2))))
-
-(defn create-axeman []
-  (let [x (rand-int 500)
-        y (rand-int 500)]
-    (axe-man x y 100)))
-
-(defn create-shooter []
-  (let [x (rand-int 500)
-        y (rand-int 500)]
-    (shooter x y 100)))
 
 (defn is-alive? [entity]
   (> (:health entity) 0))
