@@ -11,18 +11,18 @@
 (defn calculate-angle [target-x target-y x y]
   (Math/atan2 (- target-x x) (- target-y y)))
 
-(defn projectile [x y radius speed vector & [max-ttl]]
+(defn projectile [x y damage radius speed vector & [max-ttl]]
   (let [proj-data (merge vector {:max-ttl max-ttl})]
-    (entity x y 10 radius radius speed :projectile proj-data)))
+    (entity x y damage radius radius speed :projectile proj-data)))
 
 (defn axe-man [x y]
-  (entity x y 100 30 30 0.2 :axe-man))
+  (entity x y 100 30 30 0.5 :axe-man))
 
 (defn shooter [x y]
-  (entity x y 100 10 10 0.5 :shooter))
+  (entity x y 100 20 20 0.25 :shooter {:last-shot -1000}))
 
 (defn random-enemy []
-  (rand-nth [axe-man]))
+  (rand-nth [axe-man shooter]))
 
 (defn gen-vector [entity target]
   (let [x (:x entity)
@@ -38,7 +38,12 @@
 (defmulti create-projectile (fn [entity & []] [(:type entity)]))
 
 (defmethod create-projectile [:player] [entity mousePosition]
-  (let [proj (projectile (:x entity) (:y entity) 10 5 nil)
+  (let [proj (projectile (:x entity) (:y entity) 25 10 5 nil)
+        vec (gen-vector proj mousePosition)]
+    (merge proj vec)))
+
+(defmethod create-projectile [:shooter] [entity mousePosition]
+  (let [proj (projectile (:x entity) (:y entity) 15 30 0.5 nil)
         vec (gen-vector proj mousePosition)]
     (merge proj vec)))
 
@@ -46,7 +51,7 @@
   (let [x (:x entity)
         y (:y entity)
         vec (gen-vector entity target)]
-    (projectile x y 50 0 vec (+ (:last-shot entity) 2))))
+    (projectile x y 1 50 0 vec (+ (:last-shot entity) 2))))
 
 (defn is-alive? [entity]
   (> (:health entity) 0))
@@ -87,4 +92,7 @@
   (default-move entity vector))
 
 (defmethod move [:axe-man] [entity vector]
+  (default-move entity vector))
+
+(defmethod move [:shooter] [entity vector]
   (default-move entity vector))

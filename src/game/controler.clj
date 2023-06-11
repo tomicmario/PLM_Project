@@ -131,12 +131,18 @@
 (defmethod get-target [:axe-man] [[] state]
   (:player state))
 
+(defmethod get-target [:shooter] [[] state]
+  (:player state))
+
 (defmulti can-shoot? (fn [entity & []] [(:type entity)]))
 
 (defmethod can-shoot? [:player] [entity state]
   (and (> (:timestamp state) (+ (:last-shot entity) 10))
        (contains? (:inputs state) :click)
        (e/is-alive? entity)))
+
+(defmethod can-shoot? [:shooter] [entity state]
+  (> (:timestamp state) (+ (:last-shot entity) 250)))
 
 (defmethod can-shoot? [:axe-man] [entity state]
   (let [player (:player state)
@@ -176,19 +182,19 @@
 
 ; SPAWN LOGIC
 (defn spawn-coordinates [x y player exclusion]
-  (let [new-x (if (< (- (:x player) exclusion) x) x
+  (let [new-x (if (> (- (:x player) (/ exclusion 2)) x) x
                 (+ x exclusion))
-        new-y (if (< (- (:y player) exclusion) y) y
+        new-y (if (> (- (:y player) (/ exclusion 2)) y) y
                 (+ y exclusion))]
     {:x new-x :y new-y}))
 
 (defn rand-coordinates [state]
   ; returns a coordinate not present withing 50 units from the player
-  (let [exclusion 25 ;exclusion radius
+  (let [exclusion 100 ;exclusion diameter
         bounds (:bounds state)
         player (:player state)
-        rand-x (rand (- (:max-x bounds) (* exclusion 2)))
-        rand-y (rand (- (:max-y bounds) (* exclusion 2)))]
+        rand-x (rand (- (:max-x bounds) exclusion))
+        rand-y (rand (- (:max-y bounds) exclusion))]
     (spawn-coordinates rand-x rand-y player exclusion)))
 
 (defn add-enemy [state]

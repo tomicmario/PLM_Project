@@ -59,6 +59,9 @@
 (defmethod draw [:axe-man] [image enemy]
   (draw-default-ennemy image enemy draw-rect))
 
+(defmethod draw [:shooter] [image enemy]
+  (draw-default-entity image enemy draw-rect Color/MAGENTA))
+
 (defmethod draw [:player] [image player]
   (draw-default-entity image player draw-rect Color/BLUE))
 
