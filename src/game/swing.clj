@@ -23,9 +23,9 @@
 (def mouse-listener
   (proxy [MouseInputAdapter] []
     (mouseMoved [#^MouseEvent m]
-      (im/update-mouse (.getX m) (.getY m) (.getWidth dimension) (.getHeight dimension)))
+      (im/update-mouse (.getX m) (.getY m) (.getWidth panel) (.getHeight panel)))
     (mouseDragged [#^MouseEvent m]
-      (im/update-mouse (.getX m) (.getY m) (.getWidth dimension) (.getHeight dimension)))))
+      (im/update-mouse (.getX m) (.getY m) (.getWidth panel) (.getHeight panel)))))
 
 (def click-listener
   (proxy [MouseInputAdapter] []
@@ -60,6 +60,6 @@
 
 (defn display []
   (let [panelGraphics (.getGraphics panel)
-        image (r/render (.getWidth dimension) (.getHeight dimension))]
+        image (r/render (.getWidth panel) (.getHeight panel))]
     (doto ^Graphics2D panelGraphics
       (.drawImage ^BufferedImage image 0 0 nil))))
