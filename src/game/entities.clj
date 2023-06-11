@@ -55,6 +55,9 @@
         y (rand-int 500)]
     (shooter x y 100)))
 
+(defn is-alive? [entity]
+  (> (:health entity) 0))
+
 (defn damage-entity [damage entity]
   (assoc entity :health (- (:health entity) damage)))
 

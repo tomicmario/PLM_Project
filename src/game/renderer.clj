@@ -33,15 +33,6 @@
     (draw-shape image color shape))
   image)
 
-(defn draw-label [image x y text color]
-  (let [graphics (.createGraphics image)]
-    (doto ^Graphics2D graphics
-      (.setPaint color)
-      (.setFont ^Font font)
-      (.drawString ^String text x y)))
-  image)
-
-
 (defn draw-default-entity [image entity fn & [color]]
   (let [x (- (:x entity) (/ (:width entity) 2))
         y (- (:y entity) (/ (:height entity) 2))]
@@ -58,7 +49,6 @@
     (draw-rect image x y width 5 c)))
 
 (defn draw-default-ennemy [image ennemy fn]
-  (draw-healthbar image ennemy)
   (draw-default-entity image ennemy fn))
 
 (defmulti draw (fn [image entity] [(:type entity)]))
@@ -80,14 +70,17 @@
       (assoc :height (* (:height entity) y-ratio))))
 
 (defn transform-state [state x y]
-  (let [x-ratio (/ x (:max-x (:bounds state)))
-        y-ratio (/ y (:max-y (:bounds state)))
+  (let [bounds (:bounds state)
+        x-ratio (/ x (:max-x bounds))
+        y-ratio (/ y (:max-y bounds))
         fn (fn [e] (adapt-ratio e x-ratio y-ratio))]
     (-> state
         (assoc :player (fn (:player state)))
         (assoc :p-proj (mapv fn (:p-proj state)))
         (assoc :e-proj (mapv fn (:e-proj state)))
-        (assoc :enemies (mapv fn (:enemies state))))))
+        (assoc :enemies (mapv fn (:enemies state)))
+        (assoc-in [:bounds :disp-x] (* x-ratio (:max-x bounds)))
+        (assoc-in [:bounds :disp-y] (* y-ratio (:max-y bounds))))))
 
 (defn draw-collection [image coll]
   (let [reducer (fn [e] (draw image e))]
@@ -95,15 +88,37 @@
       (run! reducer coll)))
   image)
 
-(defn draw-interface [image player]
-  (draw-label image 10 20 (str "Life : " (:health player)) Color/BLACK))
+(defn draw-label [image x y text color]
+  (let [graphics (.createGraphics image)]
+    (doto ^Graphics2D graphics
+      (.setPaint color)
+      (.setFont ^Font font)
+      (.drawString ^String text ^Integer x ^Integer y)))
+  image)
+
+(defn display-game-over [image state]
+  (let [bounds (:bounds state)
+        middle-x (/ (:disp-x bounds) 2)
+        middle-y (/ (:disp-y bounds) 2)]
+    (if (> (:health (:player state)) 0)
+      image
+      (draw-label image middle-x middle-y "Game Over" Color/BLACK))))
+
+(defn draw-interface [image state]
+  (let [player (:player state)
+        enemies (:enemies state)] 
+    (run! (fn [e] (draw-healthbar image e)) enemies)
+    (-> image
+        (draw-healthbar player)
+        (draw-label 10 20 (str "Life : " (:health player)) Color/BLACK)
+        (display-game-over state))))
 
 (defn render [x y]
   (let [raw-state @state/entity-state
         display-state (transform-state raw-state x y)]
     (-> (new-image x y)
+        (draw (:player display-state))
         (draw-collection (:e-proj display-state))
         (draw-collection (:p-proj display-state))
         (draw-collection (:enemies display-state))
-        (draw (:player display-state))
-        (draw-interface (:player display-state)))))
+        (draw-interface display-state))))
