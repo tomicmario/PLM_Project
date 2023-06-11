@@ -1,11 +1,11 @@
-(ns simple-jframe.swing
+(ns game.swing
   (:import [javax.swing JFrame JPanel])
   (:import [java.awt Color Dimension Graphics2D])
   (:import [java.awt.image BufferedImage])
   (:import [java.awt.event KeyAdapter KeyEvent MouseEvent])
   (:import [javax.swing.event MouseInputAdapter])
-  (:require [simple-jframe.state :as im])
-  (:require [simple-jframe.renderer :as r]))
+  (:require [game.state :as im])
+  (:require [game.renderer :as r]))
 
 (def ^:private frame (JFrame.))
 (def ^:private panel (JPanel.))

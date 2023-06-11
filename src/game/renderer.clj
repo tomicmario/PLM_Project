@@ -1,9 +1,9 @@
-(ns simple-jframe.renderer
+(ns game.renderer
   (:gen-class)
   (:import [java.awt.image BufferedImage])
   (:import [java.awt.geom Rectangle2D$Double Ellipse2D$Double])
   (:import [java.awt Color Graphics2D Font])
-  (:require [simple-jframe.state :as state]))
+  (:require [game.state :as state]))
 
 (def image (BufferedImage. 500 500 BufferedImage/TYPE_INT_RGB))
 (def font (Font. "TimesRoman" Font/BOLD 20))

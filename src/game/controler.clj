@@ -1,7 +1,7 @@
-(ns simple-jframe.controler
+(ns game.controler
   (:gen-class)
-  (:require [simple-jframe.entities :as e])
-  (:require [simple-jframe.state :as state]))
+  (:require [game.entities :as e])
+  (:require [game.state :as state]))
 
 (def bounds {:min-x 0.0 :min-y 0.0 :max-x 500.0 :max-y 500.0})
 
@@ -10,20 +10,22 @@
        (<= (:x entity) (:max-x bounds)) (<= (:y entity) (:max-y bounds))))
 
 (defn extract-from-data [type data]
-  (filterv identity (map type data)))
+  (filterv identity (mapv type data)))
 
-(defn distance [x1 y1 x2 y2]
-  (Math/sqrt (+ (* (- y2 y1) (- y2 y1)) (* (- x2 x1) (- x2 x1)))))
+(defn closer-than-distance? [a b d]
+  ; Simplified version not using sqrt
+  (let [dist (* d d)
+        distY (* (- (:y a) (:y b)) (- (:y a) (:y b)))
+        distX (* (- (:x a) (:x b)) (- (:x a) (:x b)))]
+  (> dist (+ distX distY ))))
 
 ; COLLISION HANDLING 
 (defn colliding? [a b]
-  (let [x1 (+ (:x a)) y1 (+ (:y a))
-        x2 (+ (:x b)) y2 (+ (:y b))
-        dist (distance x1 y1 x2 y2)]
-    (< dist (+ (/ (:width a) 2) (/ (:width b) 2)))))
+  (let [max-dist (+ (/ (:width a) 2) (/ (:width b) 2))]
+    (closer-than-distance? a b max-dist )))
 
 (defn get-collide-damage [collisions]
-  (reduce + (map (fn [x] (:health x)) collisions)))
+  (reduce + (mapv (fn [x] (:health x)) collisions)))
 
 (defn get-collision-data [entity projectiles]
   (let [collide-cond (fn [e] (colliding? entity e))
@@ -46,9 +48,9 @@
         (assoc :e-proj new-proj))))
 
 (defn treat-collision-enemies [state]
-  (let [collision-data (map (fn [e] (get-collision-data e (:p-proj state))) (:enemies state))
+  (let [collision-data (mapv (fn [e] (get-collision-data e (:p-proj state))) (:enemies state))
         collided-proj  (flatten (extract-from-data :projectiles collision-data))
-        updated-enemies (map apply-damage collision-data)
+        updated-enemies (mapv apply-damage collision-data)
         new-proj (remove-collided (:p-proj state) collided-proj)]
     (-> state
         (assoc :enemies updated-enemies)
@@ -84,11 +86,11 @@
         enemies (:enemies state)]
     (-> state
         (assoc :player (e/correct-position player bounds))
-        (assoc :enemies (map (fn [e] (e/correct-position e bounds)) enemies)))))
+        (assoc :enemies (mapv (fn [e] (e/correct-position e bounds)) enemies)))))
 
 (defn move-proj [state]
-  (let [e-proj (map (fn [p] (e/move p)) (:e-proj state))
-        p-proj (map (fn [p] (e/move p)) (:p-proj state))]
+  (let [e-proj (mapv (fn [p] (e/move p)) (:e-proj state))
+        p-proj (mapv (fn [p] (e/move p)) (:p-proj state))]
     (-> state
         (assoc :e-proj e-proj)
         (assoc :p-proj p-proj))))
@@ -130,10 +132,9 @@
        (contains? (:inputs state) :click)))
 
 (defmethod can-shoot? [:axe-man] [entity state]
-  (let [b (:player state)
-        x1 (+ (:x entity)) y1 (+ (:y entity))
-        x2 (+ (:x b)) y2 (+ (:y b))]
-    (< (distance x1 y1 x2 y2) 30)))
+  (let [player (:player state)
+        shoot-distance 30]
+    (closer-than-distance? entity player shoot-distance)))
 
 (defn get-shoot-data [entity state]
   (let [timestamp (:timestamp state)
@@ -144,7 +145,7 @@
       {:entity entity :projectiles nil})))
 
 (defn enemies-shoot [state]
-  (let [proj-data (map (fn [e] (get-shoot-data e state)) (:enemies state))
+  (let [proj-data (mapv (fn [e] (get-shoot-data e state)) (:enemies state))
         shot-projectiles (extract-from-data :projectiles proj-data)
         updated-enemies (extract-from-data :entity proj-data)]
     (-> state

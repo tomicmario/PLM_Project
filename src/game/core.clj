@@ -1,17 +1,21 @@
-(ns simple-jframe.core
+(ns game.core
   (:gen-class)
-  (:require [simple-jframe.swing :as display])
-  (:require [simple-jframe.controler :as controler]))
+  (:require [game.swing :as display])
+  (:require [game.controler :as controler]))
 
 (def frame-time-ms 10)
 
 (defn simulate-game []
   (let [last-render-time (atom (System/currentTimeMillis))]
     (while true
-      (let [current-time (System/currentTimeMillis)]
-        (when (>= (- current-time @last-render-time) frame-time-ms)
+      (let [current-time (System/currentTimeMillis)
+            time-diff (- current-time @last-render-time)]
+        ;(when (> time-diff frame-time-ms) (println (str" Slow frame by " (- time-diff frame-time-ms) "ms")))
+        (when (>= time-diff frame-time-ms)
           (controler/next-tick)
-          (reset! last-render-time current-time))))))
+          (reset! last-render-time current-time))
+        (when (< time-diff frame-time-ms) 
+          (Thread/sleep 1))))))
 
 (defn render-game []
   (display/init "Projet PLM")

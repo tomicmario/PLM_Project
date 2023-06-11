@@ -1,4 +1,4 @@
-(ns simple-jframe.entities
+(ns game.entities
   (:gen-class))
 
 (defn entity [x y health width height speed type & [more]]

@@ -1,7 +1,7 @@
-(ns simple-jframe.state
+(ns game.state
   (:gen-class)
-  (:require [simple-jframe.entities :as e]
-            [simple-jframe.state :as state]))
+  (:require [game.entities :as e]
+            [game.state :as state]))
 
 (def inputs (atom #{}))
 (def mouse (atom {:x 0, :y 0}))
