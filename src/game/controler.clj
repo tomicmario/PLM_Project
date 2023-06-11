@@ -3,11 +3,10 @@
   (:require [game.entities :as e])
   (:require [game.state :as state]))
 
-(def bounds {:min-x 0.0 :min-y 0.0 :max-x 500.0 :max-y 500.0})
-
-(defn in-bounds? [entity]
-  (and (>= (:x entity) (:min-x bounds)) (>= (:y entity) (:min-y bounds))
-       (<= (:x entity) (:max-x bounds)) (<= (:y entity) (:max-y bounds))))
+(defn in-bounds? [entity state]
+  (let [bounds (:bounds state)]
+    (and (>= (:x entity) (:min-x bounds)) (>= (:y entity) (:min-y bounds))
+         (<= (:x entity) (:max-x bounds)) (<= (:y entity) (:max-y bounds)))))
 
 (defn extract-from-data [type data]
   (filterv identity (mapv type data)))
@@ -67,7 +66,7 @@
     (if (nil? ttl) true (< (:timestamp state) ttl))))
 
 (defn clean-projectiles [state]
-  (let [condition (fn [p] (and (proj-valid? p state) (in-bounds? p)))]
+  (let [condition (fn [p] (and (proj-valid? p state) (in-bounds? p state)))]
     (-> state
         (assoc :p-proj (filterv condition (:p-proj state)))
         (assoc :e-proj (filterv condition (:e-proj state))))))
@@ -85,8 +84,8 @@
   (let [player (:player state)
         enemies (:enemies state)]
     (-> state
-        (assoc :player (e/correct-position player bounds))
-        (assoc :enemies (mapv (fn [e] (e/correct-position e bounds)) enemies)))))
+        (assoc :player (e/correct-position player (:bounds state)))
+        (assoc :enemies (mapv (fn [e] (e/correct-position e (:bounds state))) enemies)))))
 
 (defn move-proj [state]
   (let [e-proj (mapv (fn [p] (e/move p)) (:e-proj state))

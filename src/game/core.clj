@@ -31,5 +31,3 @@
 ;; launch the game
 (defn -main []
   (start-threads))
-
-

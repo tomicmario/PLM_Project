@@ -4,12 +4,13 @@
   (:import [java.awt.image BufferedImage])
   (:import [java.awt.event KeyAdapter KeyEvent MouseEvent])
   (:import [javax.swing.event MouseInputAdapter])
-  (:require [game.state :as im])
+  (:require [game.state :as im]
+            [game.swing :as display])
   (:require [game.renderer :as r]))
 
 (def ^:private frame (JFrame.))
 (def ^:private panel (JPanel.))
-(def ^:private dimension (Dimension. 500 500))
+(def ^:private dimension (Dimension. 1000 500))
 
 (defn set-direction [fn event]
   (let  [keycode (.getKeyCode event)]
@@ -22,9 +23,9 @@
 (def mouse-listener
   (proxy [MouseInputAdapter] []
     (mouseMoved [#^MouseEvent m]
-      (im/update-mouse (.getX m) (.getY m)))
+      (im/update-mouse (.getX m) (.getY m) (.getWidth dimension) (.getHeight dimension)))
     (mouseDragged [#^MouseEvent m]
-      (im/update-mouse (.getX m) (.getY m)))))
+      (im/update-mouse (.getX m) (.getY m) (.getWidth dimension) (.getHeight dimension)))))
 
 (def click-listener
   (proxy [MouseInputAdapter] []
@@ -52,7 +53,6 @@
     (.setSize dimension)
     (.setDoubleBuffered true)
     (.setBackground Color/WHITE)
-    (.setSize dimension)
     (.setPreferredSize dimension)
     (.addMouseMotionListener mouse-listener)
     (.addMouseListener click-listener))
@@ -60,6 +60,6 @@
 
 (defn display []
   (let [panelGraphics (.getGraphics panel)
-        image (r/render)]
+        image (r/render (.getWidth dimension) (.getHeight dimension))]
     (doto ^Graphics2D panelGraphics
       (.drawImage ^BufferedImage image 0 0 nil))))
