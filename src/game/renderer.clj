@@ -9,9 +9,18 @@
 
 (def font (Font. "TimesRoman" Font/BOLD 20))
 
+(def bg (ImageIO/read (io/file "resources/Space001.png")))
+
+(def player-image (ImageIO/read (io/file "resources/player_ship.PNG")))
+
+(def projectile-image (ImageIO/read (io/file "resources/energy_ball.png")))
+
+(def kamikaze-image (ImageIO/read (io/file "resources/kamikaze.png")))
+
+(def shooter-image (ImageIO/read (io/file "resources/shooter.png")))
+
 (defn draw-image [image x y w h path]
-  (let [custom (ImageIO/read (io/file path))]
-    (.drawImage image custom w h x y nil)))
+    (.drawImage image path w h x y nil))
 
 (defn new-image [x y]
   (let [image (BufferedImage. x y BufferedImage/TYPE_INT_RGB)
@@ -19,7 +28,7 @@
     (doto ^Graphics2D graphics
       (.setColor Color/WHITE)
       (.fill (Rectangle2D$Double. 0 0 x y)))
-    (draw-image graphics x y 0 0 "resources/Space001.png")
+    (draw-image graphics x y 0 0 bg)
     image))
 
 (defn draw-shape [image color shape]
@@ -45,13 +54,6 @@
         y (- (:y entity) (/ (:height entity) 2))]
     (fn image x y (:width entity) (:height entity) color)))
 
-(defn draw-default-image [image entity path]
-  (let [x (- (:x entity) (/ (:width entity) 2))
-        y (- (:y entity) (/ (:height entity) 2))
-        graphics (.createGraphics image)]
-    (draw-image graphics (:width entity) (:height entity) x y path)
-    image))
-
 (defn get-health-ratio [entity]
   (/ (:health entity) 100))
 
@@ -65,19 +67,27 @@
 (defn draw-default-ennemy [image ennemy fn]
   (draw-default-entity image ennemy fn))
 
+(defn draw-image-ent [image entity disp]
+  (let [x (- (:x entity) (/ (:width entity) 2))
+        y (- (:y entity) (/ (:height entity) 2))
+        graphics (.createGraphics image)]
+    (draw-image graphics (:width entity) (:height entity) x y disp)
+    image))
+
+
 (defmulti draw (fn [image entity] [(:type entity)]))
 
 (defmethod draw [:projectile] [image projectile]
-  (draw-default-image image projectile "resources/energy_ball.png"))
+  (draw-image-ent image projectile projectile-image))
 
 (defmethod draw [:axe-man] [image enemy]
-  (draw-default-image image enemy "resources/kamikaze.png"))
+  (draw-image-ent image enemy kamikaze-image))
 
 (defmethod draw [:shooter] [image enemy]
-  (draw-default-image image enemy "resources/shooter.png"))
+  (draw-image-ent image enemy shooter-image))
 
 (defmethod draw [:player] [image player]
-  (draw-default-image image player "resources/player_ship.png"))
+  (draw-image-ent image player player-image))
 
 (defn adapt-ratio [entity x-ratio y-ratio]
   (-> entity
@@ -123,7 +133,7 @@
 
 (defn draw-interface [image state]
   (let [player (:player state)
-        enemies (:enemies state)] 
+        enemies (:enemies state)]
     (run! (fn [e] (draw-healthbar image e)) enemies)
     (-> image
         (draw-healthbar player)
