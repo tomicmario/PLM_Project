@@ -96,7 +96,8 @@
       (assoc :x (* (:x entity) x-ratio))
       (assoc :y (* (:y entity) y-ratio))
       (assoc :width (* (:width entity) x-ratio))
-      (assoc :height (* (:height entity) y-ratio))))
+      (assoc :height (* (:height entity) y-ratio))
+      (assoc :angle (- (/ Math/PI 4) (:angle entity)))))
 
 (defn transform-state [state x y]
   (let [bounds (:bounds state)

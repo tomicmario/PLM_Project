@@ -206,12 +206,20 @@
       (assoc state :enemies enemies))
     state))
 
-(defn player-coordinate-for-display [state]
-  (let [player (:player state)
-        mouse-position (:mouse state)
-        angle (- (/ Math/PI 4) (e/calculate-angle (:x mouse-position) (:y mouse-position) (:x player) (:y player)))
-        updated-player (assoc player :angle angle)]
+(defn update-angle-player [state]
+  (let [angle (e/calculate-angle (:mouse state) (:player state))
+        updated-player (assoc (:player state) :angle angle)]
     (assoc state :player updated-player)))
+
+(defn update-angle-enemies [state]
+  (let [fn-target (fn [e] (e/calculate-angle (get-target e state) e))
+        updated-enemy (fn [e] (assoc e :angle (fn-target e)))]
+    (assoc state :enemies (mapv updated-enemy (:enemies state)))))
+
+(defn update-angle-for-display [state]
+  (-> state
+      (update-angle-player)
+      (update-angle-enemies)))
 
 ; ENTIRE FRAME LOGIC
 (defn next-tick []
@@ -221,5 +229,5 @@
       (move-entities)
       (shoot-entities)
       (add-enemy)
-      (player-coordinate-for-display)
+      (update-angle-for-display)
       (state/update-state)))
