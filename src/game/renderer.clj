@@ -1,7 +1,7 @@
 (ns game.renderer
   (:gen-class)
   (:import [java.awt.image BufferedImage])
-  (:import [java.awt.geom Rectangle2D$Double Ellipse2D$Double])
+  (:import [java.awt.geom Rectangle2D$Double])
   (:import [java.awt Color Graphics2D Font])
   (:import [javax.imageio ImageIO])
   (:require [game.state :as state]
@@ -9,15 +9,18 @@
 
 (def font (Font. "TimesRoman" Font/BOLD 20))
 
-(def bg (ImageIO/read (io/file "resources/Space001.png")))
+(defn get-image-from-file [path]
+  (ImageIO/read (io/file path)))
 
-(def player-image (ImageIO/read (io/file "resources/player_ship.PNG")))
+(def bg (get-image-from-file "resources/Space001.png"))
 
-(def projectile-image (ImageIO/read (io/file "resources/energy_ball.png")))
+(def player-image (get-image-from-file "resources/player_ship.PNG"))
 
-(def kamikaze-image (ImageIO/read (io/file "resources/kamikaze.png")))
+(def projectile-image (get-image-from-file "resources/energy_ball.png"))
 
-(def shooter-image (ImageIO/read (io/file "resources/shooter.png")))
+(def kamikaze-image (get-image-from-file "resources/kamikaze.png"))
+
+(def shooter-image (get-image-from-file "resources/shooter.png"))
 
 (defn draw-image [image x y w h path]
     (.drawImage image path w h x y nil))
@@ -39,20 +42,10 @@
       (.fill shape)))
   image)
 
-(defn draw-circle [image x y width height & [color]]
-  (let [shape (Ellipse2D$Double. x y width height)]
-    (draw-shape image  color shape))
-  image)
-
 (defn draw-rect [image x y w h & [color]]
   (let [shape (Rectangle2D$Double. x y w h)]
     (draw-shape image color shape))
   image)
-
-(defn draw-default-entity [image entity fn & [color]]
-  (let [x (- (:x entity) (/ (:width entity) 2))
-        y (- (:y entity) (/ (:height entity) 2))]
-    (fn image x y (:width entity) (:height entity) color)))
 
 (defn get-health-ratio [entity]
   (/ (:health entity) 100))
@@ -64,16 +57,25 @@
         c (if (< (:health entity) 25) Color/RED Color/GREEN)]
     (draw-rect image x y width 5 c)))
 
-(defn draw-default-ennemy [image ennemy fn]
-  (draw-default-entity image ennemy fn))
+(defn draw-image-rotation [image entity disp]
+  (let [angle (- (:angle entity) Math/PI (/ Math/PI 4))
+        x (- (:x entity) (/ (:width entity) 2))
+        y (- (:y entity) (/ (:height entity) 2))
+        graphics (.createGraphics image)
+        old-angle (.getTransform graphics)]
+    (.translate graphics (:x entity) (:y entity))
+    (.rotate graphics angle)
+    (.translate graphics (- (:x entity)) (- (:y entity)))
+    (draw-image graphics (:width entity) (:height entity) x y disp)
+    (.setTransform graphics old-angle)
+    image))
 
 (defn draw-image-ent [image entity disp]
   (let [x (- (:x entity) (/ (:width entity) 2))
         y (- (:y entity) (/ (:height entity) 2))
         graphics (.createGraphics image)]
-    (draw-image graphics (:width entity) (:height entity) x y disp)
+    (draw-image graphics (:width entity) (:height entity) x y disp) 
     image))
-
 
 (defmulti draw (fn [image entity] [(:type entity)]))
 
@@ -81,13 +83,13 @@
   (draw-image-ent image projectile projectile-image))
 
 (defmethod draw [:axe-man] [image enemy]
-  (draw-image-ent image enemy kamikaze-image))
+  (draw-image-rotation image enemy kamikaze-image))
 
 (defmethod draw [:shooter] [image enemy]
-  (draw-image-ent image enemy shooter-image))
+  (draw-image-rotation image enemy shooter-image))
 
 (defmethod draw [:player] [image player]
-  (draw-image-ent image player player-image))
+  (draw-image-rotation image player player-image))
 
 (defn adapt-ratio [entity x-ratio y-ratio]
   (-> entity

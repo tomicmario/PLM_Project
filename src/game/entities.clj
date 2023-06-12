@@ -3,7 +3,7 @@
 
 (defn entity [x y health width height speed type & [more]]
   (merge {:x x :y y :health health :speed speed
-          :width width :height height :type type} more))
+          :width width :height height :type type :angle 0} more))
 
 (defn default-player [x y]
   (entity x y 100 20 20 0.5 :player {:last-shot -1000}))
@@ -33,7 +33,7 @@
         angle (- (/ Math/PI 4) (calculate-angle target-x target-y x y))
         vec-x (- (* (Math/cos angle) speed) (* (Math/sin angle) speed))
         vec-y (+ (* (Math/sin angle) speed) (* (Math/cos angle) speed))]
-    {:vec-x vec-x :vec-y vec-y}))
+    {:vec-x vec-x :vec-y vec-y :angle angle}))
 
 (defmulti create-projectile (fn [entity & []] [(:type entity)]))
 
@@ -61,12 +61,14 @@
 
 (defn new-position [entity vector]
   {:x (+ (:x entity) (:vec-x vector))
-   :y (+ (:y entity) (:vec-y vector))})
+   :y (+ (:y entity) (:vec-y vector))
+   :angle (:angle vector)})
 
 (defn apply-position [entity pos]
-  (-> entity
+  (-> entity 
       (assoc :x (:x pos))
-      (assoc :y (:y pos))))
+      (assoc :y (:y pos))
+      (assoc :angle (:angle pos))))
 
 (defn update-timestamp [entity timestamp]
   (merge entity {:last-shot timestamp}))
@@ -74,7 +76,7 @@
 (defn correct-position [entity bounds]
   (let [new-x (min (:max-x bounds) (max (:min-x bounds) (:x entity)))
         new-y (min (:max-y bounds) (max (:min-y bounds) (:y entity)))
-        new-pos {:x new-x :y new-y}]
+        new-pos {:x new-x :y new-y :angle (:angle entity)}]
     (apply-position entity new-pos)))
 
 (defn default-move [entity vector]

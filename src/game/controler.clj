@@ -106,12 +106,12 @@
 (defn input-to-vector [inputs]
   (let [y (- (if (contains? inputs :down) 1 0) (if (contains? inputs :up) 1 0))
         x (- (if (contains? inputs :right) 1 0) (if (contains? inputs :left) 1 0))]
-    {:vec-x x :vec-y y}))
+    {:vec-x x :vec-y y :angle 0}))
 
 (defn move-player [state]
   (let [vec (input-to-vector (:inputs state))
         player (:player state)
-        vector (if (e/is-alive? player) vec {:vec-x 0 :vec-y 0})
+        vector (if (e/is-alive? player) vec {:vec-x 0 :vec-y 0 :angle 0})
         updated-player (e/move player vector)]
     (assoc state :player updated-player)))
 
@@ -206,6 +206,13 @@
       (assoc state :enemies enemies))
     state))
 
+(defn player-coordinate-for-display [state]
+  (let [player (:player state)
+        mouse-position (:mouse state)
+        angle (- (/ Math/PI 4) (e/calculate-angle (:x mouse-position) (:y mouse-position) (:x player) (:y player)))
+        updated-player (assoc player :angle angle)]
+    (assoc state :player updated-player)))
+
 ; ENTIRE FRAME LOGIC
 (defn next-tick []
   (-> (state/get-state)
@@ -214,4 +221,5 @@
       (move-entities)
       (shoot-entities)
       (add-enemy)
+      (player-coordinate-for-display)
       (state/update-state)))
