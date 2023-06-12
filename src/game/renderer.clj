@@ -9,15 +9,9 @@
 
 (def font (Font. "TimesRoman" Font/BOLD 20))
 
-#_
-(defn new-image [x y]
-  (let [image (BufferedImage. x y BufferedImage/TYPE_INT_RGB)
-        graphics (.createGraphics image)]
-    (doto ^Graphics2D graphics
-      (.setColor Color/WHITE)
-      (.fill (Rectangle2D$Double. 0 0 x y)))
-    image))
-
+(defn draw-image [image x y w h path]
+  (let [custom (ImageIO/read (io/file path))]
+    (.drawImage image custom w h x y nil)))
 
 (defn new-image [x y]
   (let [image (BufferedImage. x y BufferedImage/TYPE_INT_RGB)
@@ -25,8 +19,7 @@
     (doto ^Graphics2D graphics
       (.setColor Color/WHITE)
       (.fill (Rectangle2D$Double. 0 0 x y)))
-    (let [background-image (ImageIO/read (io/file "resources/Space001.png"))]
-      (.drawImage graphics background-image 0 0 x y nil))
+    (draw-image graphics x y 0 0 "resources/Space001.png")
     image))
 
 (defn draw-shape [image color shape]
