@@ -45,6 +45,13 @@
         y (- (:y entity) (/ (:height entity) 2))]
     (fn image x y (:width entity) (:height entity) color)))
 
+(defn draw-default-image [image entity path]
+  (let [x (- (:x entity) (/ (:width entity) 2))
+        y (- (:y entity) (/ (:height entity) 2))
+        graphics (.createGraphics image)]
+    (draw-image graphics (:width entity) (:height entity) x y path)
+    image))
+
 (defn get-health-ratio [entity]
   (/ (:health entity) 100))
 
@@ -61,16 +68,16 @@
 (defmulti draw (fn [image entity] [(:type entity)]))
 
 (defmethod draw [:projectile] [image projectile]
-  (draw-default-entity image projectile draw-circle Color/ORANGE))
+  (draw-default-image image projectile "resources/energy_ball.png"))
 
 (defmethod draw [:axe-man] [image enemy]
-  (draw-default-ennemy image enemy draw-rect))
+  (draw-default-image image enemy "resources/kamikaze.png"))
 
 (defmethod draw [:shooter] [image enemy]
-  (draw-default-entity image enemy draw-rect Color/MAGENTA))
+  (draw-default-image image enemy "resources/shooter.png"))
 
 (defmethod draw [:player] [image player]
-  (draw-default-entity image player draw-rect Color/BLUE))
+  (draw-default-image image player "resources/player_ship.png"))
 
 (defn adapt-ratio [entity x-ratio y-ratio]
   (-> entity
