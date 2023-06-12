@@ -3,9 +3,21 @@
   (:import [java.awt.image BufferedImage])
   (:import [java.awt.geom Rectangle2D$Double Ellipse2D$Double])
   (:import [java.awt Color Graphics2D Font])
-  (:require [game.state :as state]))
+  (:import [javax.imageio ImageIO])
+  (:require [game.state :as state]
+            [clojure.java.io :as io]))
 
 (def font (Font. "TimesRoman" Font/BOLD 20))
+
+#_
+(defn new-image [x y]
+  (let [image (BufferedImage. x y BufferedImage/TYPE_INT_RGB)
+        graphics (.createGraphics image)]
+    (doto ^Graphics2D graphics
+      (.setColor Color/WHITE)
+      (.fill (Rectangle2D$Double. 0 0 x y)))
+    image))
+
 
 (defn new-image [x y]
   (let [image (BufferedImage. x y BufferedImage/TYPE_INT_RGB)
@@ -13,6 +25,8 @@
     (doto ^Graphics2D graphics
       (.setColor Color/WHITE)
       (.fill (Rectangle2D$Double. 0 0 x y)))
+    (let [background-image (ImageIO/read (io/file "resources/Space001.png"))]
+      (.drawImage graphics background-image 0 0 x y nil))
     image))
 
 (defn draw-shape [image color shape]
