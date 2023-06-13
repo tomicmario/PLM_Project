@@ -111,7 +111,7 @@
 (defn move-player [state]
   (let [vec (input-to-vector (:inputs state))
         player (:player state)
-        vector (if (e/is-alive? player) vec {:vec-x 0 :vec-y 0 :angle 0})
+        vector (if (e/is-alive? player) vec {:vec-x 0 :vec-y 0})
         updated-player (e/move player vector)]
     (assoc state :player updated-player)))
 
@@ -128,7 +128,7 @@
 (defmethod get-target [:player] [[] state]
   (:mouse state))
 
-(defmethod get-target [:axe-man] [[] state]
+(defmethod get-target [:kamikaze] [[] state]
   (:player state))
 
 (defmethod get-target [:shooter] [[] state]
@@ -137,14 +137,14 @@
 (defmulti can-shoot? (fn [entity & []] [(:type entity)]))
 
 (defmethod can-shoot? [:player] [entity state]
-  (and (> (:timestamp state) (+ (:last-shot entity) 10))
+  (and (> (:timestamp state) (+ (:last-shot entity) (:firerate entity)))
        (contains? (:inputs state) :click)
        (e/is-alive? entity)))
 
 (defmethod can-shoot? [:shooter] [entity state]
-  (> (:timestamp state) (+ (:last-shot entity) 250)))
+  (> (:timestamp state) (+ (:last-shot entity) (:firerate entity))))
 
-(defmethod can-shoot? [:axe-man] [entity state]
+(defmethod can-shoot? [:kamikaze] [entity state]
   (let [player (:player state)
         shoot-distance 30]
     (and (closer-than-distance? entity player shoot-distance)

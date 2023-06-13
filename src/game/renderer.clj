@@ -48,13 +48,14 @@
   image)
 
 (defn get-health-ratio [entity]
-  (/ (:health entity) 100))
+  (/ (:health entity) (:max-health entity)))
 
 (defn draw-healthbar [image entity]
   (let [x  (- (:x entity) (/ (:width entity) 2))
         y (+ (- (:y entity) (:height entity)) 5)
-        width (* (get-health-ratio entity) (:width entity))
-        c (if (< (:health entity) 25) Color/RED Color/GREEN)]
+        ratio (get-health-ratio entity)
+        width (* ratio (:width entity))
+        c (if (< ratio 0.3) Color/RED Color/GREEN)]
     (draw-rect image x y width 5 c)))
 
 (defn draw-image-rotation [image entity disp]
@@ -82,7 +83,7 @@
 (defmethod draw [:projectile] [image projectile]
   (draw-image-ent image projectile projectile-image))
 
-(defmethod draw [:axe-man] [image enemy]
+(defmethod draw [:kamikaze] [image enemy]
   (draw-image-rotation image enemy kamikaze-image))
 
 (defmethod draw [:shooter] [image enemy]
