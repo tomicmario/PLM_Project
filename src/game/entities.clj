@@ -1,15 +1,26 @@
 (ns game.entities
   (:gen-class))
 
+(defn calculate-angle [a b]
+  (Math/atan2 (- (:x a) (:x b)) (- (:y a) (:y b))))
+
+(defn is-alive? [entity]
+  (> (:health entity) 0))
+
+(defn gen-vector [entity target]
+  (let [speed (:speed entity)
+        angle (- (/ Math/PI 4) (calculate-angle target entity))
+        vec-x (- (* (Math/cos angle) speed) (* (Math/sin angle) speed))
+        vec-y (+ (* (Math/sin angle) speed) (* (Math/cos angle) speed))]
+    {:vec-x vec-x :vec-y vec-y}))
+
+; ENTITIES DEFINITION
 (defn entity [x y health width height speed type & [more]]
   (merge {:x x :y y :health health :speed speed
           :width width :height height :type type :angle 0 :max-health health} more))
 
 (defn default-player [x y]
   (entity x y 100 20 20 1 :player {:last-shot 0 :firerate 10}))
-
-(defn calculate-angle [a b]
-  (Math/atan2 (- (:x a) (:x b)) (- (:y a) (:y b))))
 
 (defn projectile [x y damage radius speed vector & [max-ttl]]
   (let [proj-data (merge vector {:max-ttl max-ttl})]
@@ -23,14 +34,9 @@
 
 (defn random-enemy []
   (rand-nth [kamikaze shooter]))
+; END ENTITY DEFINITION
 
-(defn gen-vector [entity target]
-  (let [speed (:speed entity)
-        angle (- (/ Math/PI 4) (calculate-angle target entity))
-        vec-x (- (* (Math/cos angle) speed) (* (Math/sin angle) speed))
-        vec-y (+ (* (Math/sin angle) speed) (* (Math/cos angle) speed))]
-    {:vec-x vec-x :vec-y vec-y}))
-
+; MOVEMENT RELATED
 (defmulti create-projectile (fn [entity & []] [(:type entity)]))
 
 (defmethod create-projectile [:player] [entity mousePosition]
@@ -48,9 +54,6 @@
         y (:y entity)
         vec (gen-vector entity target)]
     (projectile x y 1 50 0 vec (+ (:last-shot entity) 2))))
-
-(defn is-alive? [entity]
-  (> (:health entity) 0))
 
 (defn damage-entity [damage entity]
   (assoc entity :health (- (:health entity) damage)))

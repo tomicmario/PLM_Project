@@ -9,35 +9,40 @@
         y (/ (:max-y bounds) 2)]
   (e/default-player x y)))
 
-(def inputs (atom #{}))
-(def mouse (atom {:x 0, :y 0}))
-
 (defn default-state []
   {:player (default-player) :p-proj [] :e-proj []
    :enemies [] :timestamp 0 :bounds bounds :score 0})
 
+; STATE VARIABLES
+(def inputs (atom #{}))
+(def mouse (atom {:x 0, :y 0}))
 (def entity-state (atom (default-state)))
 
-(defn default-entity-state []
-  (reset! entity-state (default-state)))
-
-(defn get-state []
+(defn get-state [] 
   (let [inputs @inputs
         mouse @mouse
         entities @entity-state]
     (merge entities {:inputs inputs :mouse mouse})))
 
+; INPUTS UPDATE
 (defn add-input [x]
   (swap! inputs conj x))
 
 (defn remove-input [x]
   (swap! inputs disj x))
 
-(defn update-mouse [x y max-x max-y]
+(defn update-mouse [x y max-x max-y] 
+  ; Requires the maximum size of display to have interpretable positions, 
+  ; that don't depend on a fixed size
   (let [new-x (* x (/ (:max-x bounds) max-x))
         new-y (* y (/ (:max-y bounds) max-y))]
   (swap! mouse assoc :x new-x)
   (swap! mouse assoc :y new-y)))
+; END INPUTS UPDATE
+
+; GLOBAL STATE UPDATE
+(defn default-entity-state []
+  (reset! entity-state (default-state)))
 
 (defn reset []
   (default-entity-state))

@@ -12,7 +12,7 @@
 (def ^:private panel (JPanel.))
 (def ^:private dimension (Dimension. 1000 500))
 
-(defn set-direction [fn event]
+(defn set-direction [fn event] ; A bit of a hack, because switch case didn't want to work
   (let  [keycode (.getKeyCode event)]
     (if (= keycode KeyEvent/VK_W) (fn :up) nil)
     (if (= keycode KeyEvent/VK_S) (fn :down) nil)
@@ -40,7 +40,7 @@
     (keyPressed [#^KeyEvent e] (set-direction im/add-input e))
     (keyReleased [#^KeyEvent e] (set-direction im/remove-input e))))
 
-(defn init [title]
+(defn init [title] ; init of ui components
   (doto frame
     (.setTitle title)
     (.setVisible true)
@@ -59,7 +59,7 @@
     (.addMouseListener click-listener))
   (.pack frame))
 
-(defn display []
+(defn display [] ; Simply displays a render of the current state
   (let [panelGraphics (.getGraphics panel)
         image (r/render (.getWidth panel) (.getHeight panel))]
     (doto ^Graphics2D panelGraphics

@@ -8,6 +8,7 @@
 (defn simulate-game []
   (let [last-render-time (atom (System/currentTimeMillis))]
     (while true
+      ; the purpose is that the thread sleeps when the frame is about to get simulated too fast
       (let [current-time (System/currentTimeMillis)
             time-diff (- current-time @last-render-time)]
         ;(when (> time-diff frame-time-ms) (println (str" Slow frame by " (- time-diff frame-time-ms) "ms")))

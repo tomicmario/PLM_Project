@@ -12,7 +12,7 @@
     (and (>= (:x entity) (:min-x bounds)) (>= (:y entity) (:min-y bounds))
          (<= (:x entity) (:max-x bounds)) (<= (:y entity) (:max-y bounds)))))
 
-(defn extract-from-data [type data]
+(defn extract-from-data [type data] ; util function for pairs, filters nils
   (filterv identity (mapv type data)))
 
 (defn closer-than-distance? [a b d]
@@ -30,17 +30,19 @@
 (defn get-collide-damage [collisions]
   (reduce + (mapv (fn [x] (:health x)) collisions)))
 
+; returns a map containing the entity and the projectiles that collided with it
 (defn get-collision-data [entity projectiles]
   (let [collide-cond (fn [e] (colliding? entity e))
         colliding (filterv collide-cond projectiles)]
     {:entity entity :projectiles (if (empty? colliding) nil colliding)}))
 
-(defn apply-damage [d]
+(defn apply-damage [d] ; requires the map of get-collision data
   (e/damage-entity (get-collide-damage (:projectiles d)) (:entity d)))
 
-(defn remove-collided [projectiles collided]
-  (let [colliding-proj (into #{} collided)]
-    (filterv (fn [p] (not (contains? colliding-proj p))) projectiles)))
+(defn remove-collided [projectiles collided] ; requires the map of get-collision data on collided
+  (let [colliding-proj (into #{} collided)
+        has-collided? (fn [p] (not (contains? colliding-proj p)))]
+    (filterv has-collided? projectiles)))
 
 (defn treat-collision-player [state]
   (let [collided-proj (get-collision-data (:player state) (:e-proj state))
@@ -87,6 +89,7 @@
   (-> state
       (clean-projectiles)
       (clean-enemies)))
+; END DEAD ENTITY REMOVAL
 
 ; ENTITY MOVING
 (defn correct-positions [state]
@@ -107,7 +110,7 @@
   (let [enemies (map (fn [e] (e/move e (e/gen-vector e (:player state)))) (:enemies state))]
     (assoc state :enemies enemies)))
 
-(defn input-to-vector [player inputs]
+(defn input-to-vector [player inputs] ; generates vector based on the inputs, for the player
   (let [speed (:speed player)
         y (- (if (contains? inputs :down) speed 0) (if (contains? inputs :up) speed 0))
         x (- (if (contains? inputs :right) speed 0) (if (contains? inputs :left) speed 0))]
@@ -126,6 +129,7 @@
       (move-player)
       (move-enemies)
       (correct-positions)))
+; END ENTITY MOVING
 
 ; SHOOTING
 (defmulti get-target (fn [entity & []] [(:type entity)]))
@@ -184,6 +188,7 @@
   (-> state
       (player-shoot)
       (enemies-shoot)))
+; END ENTITY SHOOTING
 
 ; SPAWN LOGIC
 (defn spawn-coordinates [x y player exclusion]
@@ -210,6 +215,7 @@
       (assoc state :enemies enemies))
     state))
 
+; for display purpose, calculates here at which angle the entities should be turned
 (defn update-angle-player [state]
   (let [angle (e/calculate-angle (:mouse state) (:player state))
         updated-player (assoc (:player state) :angle angle)]

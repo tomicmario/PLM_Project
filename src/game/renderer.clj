@@ -9,6 +9,7 @@
 
 (def font (Font. "TimesRoman" Font/BOLD 20))
 
+; ENTITY IMAGES
 (defn get-image-from-file [path]
   (ImageIO/read (io/file path)))
 
@@ -21,6 +22,16 @@
 (def kamikaze-image (get-image-from-file "resources/kamikaze.png"))
 
 (def shooter-image (get-image-from-file "resources/shooter.png"))
+; END ENTITY IMAGES
+
+; BASIC DRAWING FUNCTIONS
+(defn draw-label [image x y text color]
+  (let [graphics (.createGraphics image)]
+    (doto ^Graphics2D graphics
+      (.setPaint color)
+      (.setFont ^Font font)
+      (.drawString ^String text ^Integer x ^Integer y)))
+  image)
 
 (defn draw-image [image x y w h path]
     (.drawImage ^Graphics image path w h x y nil))
@@ -46,17 +57,6 @@
   (let [shape (Rectangle2D$Double. x y w h)]
     (draw-shape image color shape))
   image)
-
-(defn get-health-ratio [entity]
-  (/ (:health entity) (:max-health entity)))
-
-(defn draw-healthbar [image entity]
-  (let [x  (- (:x entity) (/ (:width entity) 2))
-        y (+ (- (:y entity) (:height entity)) 5)
-        ratio (get-health-ratio entity)
-        width (* ratio (:width entity))
-        c (if (< ratio 0.3) Color/RED Color/GREEN)]
-    (draw-rect image x y width 5 c)))
 
 (defn draw-image-rotation [image entity disp]
   (let [angle (- (:angle entity) Math/PI (/ Math/PI 4))
@@ -91,6 +91,11 @@
 
 (defmethod draw [:player] [image player]
   (draw-image-rotation image player player-image))
+; END BASIC DRAW FUNCTIONS
+
+; ADAPTING STATE TO MATCH DISPLAY
+(defn get-health-ratio [entity]
+  (/ (:health entity) (:max-health entity)))
 
 (defn adapt-ratio [entity x-ratio y-ratio]
   (-> entity
@@ -112,19 +117,13 @@
         (assoc :enemies (mapv fn (:enemies state)))
         (assoc-in [:bounds :disp-x] (* x-ratio (:max-x bounds)))
         (assoc-in [:bounds :disp-y] (* y-ratio (:max-y bounds))))))
+; END ADAPTING STATE FOR DISPLAY
 
+; RENDER STEPS
 (defn draw-collection [image coll]
   (let [reducer (fn [e] (draw image e))]
     (when-not (or (nil? coll) (empty? coll))
       (run! reducer coll)))
-  image)
-
-(defn draw-label [image x y text color]
-  (let [graphics (.createGraphics image)]
-    (doto ^Graphics2D graphics
-      (.setPaint color)
-      (.setFont ^Font font)
-      (.drawString ^String text ^Integer x ^Integer y)))
   image)
 
 (defn display-game-over [image state]
@@ -135,6 +134,14 @@
       image
       (draw-label image middle-x middle-y "Game Over" Color/BLACK))))
 
+(defn draw-healthbar [image entity]
+  (let [x  (- (:x entity) (/ (:width entity) 2))
+        y (+ (- (:y entity) (:height entity)) 5)
+        ratio (get-health-ratio entity)
+        width (* ratio (:width entity))
+        c (if (< ratio 0.3) Color/RED Color/GREEN)]
+    (draw-rect image x y width 5 c)))
+
 (defn draw-interface [image state]
   (let [player (:player state)
         enemies (:enemies state)]
@@ -143,7 +150,9 @@
         (draw-healthbar player)
         (draw-label 10 20 (str "Score : " (:score state)) Color/BLACK)
         (display-game-over state))))
+; END RENDER STEPS
 
+; Render the state, takes requires to know what the maximum resolution of the display is with x and y
 (defn render [x y]
   (let [raw-state @state/entity-state
         display-state (transform-state raw-state x y)]
