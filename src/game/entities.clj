@@ -6,7 +6,7 @@
           :width width :height height :type type :angle 0 :max-health health} more))
 
 (defn default-player [x y]
-  (entity x y 100 20 20 0.5 :player {:last-shot 0 :firerate 10}))
+  (entity x y 100 20 20 1 :player {:last-shot 0 :firerate 10}))
 
 (defn calculate-angle [a b]
   (Math/atan2 (- (:x a) (:x b)) (- (:y a) (:y b))))
@@ -16,7 +16,7 @@
     (entity x y damage radius radius speed :projectile proj-data)))
 
 (defn kamikaze [x y]
-  (entity x y 100 20 20 0.7 :kamikaze))
+  (entity x y 100 20 20 0.6 :kamikaze))
 
 (defn shooter [x y]
   (entity x y 200 30 30 0.25 :shooter {:last-shot 20 :firerate 100}))

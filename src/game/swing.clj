@@ -44,7 +44,8 @@
   (doto frame
     (.setTitle title)
     (.setVisible true)
-    (.setLocationRelativeTo nil)
+    (.setLocation 0 0)
+    (.setMinimumSize (Dimension. 480 360))
     (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
     (.setContentPane panel)
     (.addKeyListener key-listener))

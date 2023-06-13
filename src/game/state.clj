@@ -1,7 +1,6 @@
 (ns game.state
   (:gen-class)
-  (:require [game.entities :as e]
-            [game.state :as state]))
+  (:require [game.entities :as e]))
 
 (def bounds {:min-x 0.0 :min-y 0.0 :max-x 500.0 :max-y 500.0})
 

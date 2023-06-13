@@ -3,6 +3,10 @@
   (:require [game.entities :as e]
             [game.state :as state]))
 
+(def exclusion-radius 150)
+
+(def max-enemy 10)
+
 (defn in-bounds? [entity state]
   (let [bounds (:bounds state)]
     (and (>= (:x entity) (:min-x bounds)) (>= (:y entity) (:min-y bounds))
@@ -103,14 +107,15 @@
   (let [enemies (map (fn [e] (e/move e (e/gen-vector e (:player state)))) (:enemies state))]
     (assoc state :enemies enemies)))
 
-(defn input-to-vector [inputs]
-  (let [y (- (if (contains? inputs :down) 1 0) (if (contains? inputs :up) 1 0))
-        x (- (if (contains? inputs :right) 1 0) (if (contains? inputs :left) 1 0))]
-    {:vec-x x :vec-y y :angle 0}))
+(defn input-to-vector [player inputs]
+  (let [speed (:speed player)
+        y (- (if (contains? inputs :down) speed 0) (if (contains? inputs :up) speed 0))
+        x (- (if (contains? inputs :right) speed 0) (if (contains? inputs :left) speed 0))]
+    {:vec-x x :vec-y y}))
 
 (defn move-player [state]
-  (let [vec (input-to-vector (:inputs state))
-        player (:player state)
+  (let [player (:player state)
+        vec (input-to-vector player (:inputs state)) 
         vector (if (e/is-alive? player) vec {:vec-x 0 :vec-y 0})
         updated-player (e/move player vector)]
     (assoc state :player updated-player)))
@@ -190,15 +195,14 @@
 
 (defn rand-coordinates [state]
   ; returns a coordinate not present withing 50 units from the player
-  (let [exclusion 100 ;exclusion diameter
-        bounds (:bounds state)
+  (let [bounds (:bounds state)
         player (:player state)
-        rand-x (rand (- (:max-x bounds) exclusion))
-        rand-y (rand (- (:max-y bounds) exclusion))]
-    (spawn-coordinates rand-x rand-y player exclusion)))
+        rand-x (rand (- (:max-x bounds) exclusion-radius))
+        rand-y (rand (- (:max-y bounds) exclusion-radius))]
+    (spawn-coordinates rand-x rand-y player exclusion-radius)))
 
 (defn add-enemy [state]
-  (if (< (count (:enemies state)) 10)
+  (if (< (count (:enemies state)) max-enemy)
     (let [en-fn (e/random-enemy) ; enemy create function
           rand-cor (rand-coordinates state)
           enemy (en-fn (:x rand-cor) (:y rand-cor))
