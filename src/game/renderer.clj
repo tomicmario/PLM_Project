@@ -1,8 +1,8 @@
 (ns game.renderer
   (:gen-class)
   (:import [java.awt.image BufferedImage])
-  (:import [java.awt.geom Rectangle2D$Double])
-  (:import [java.awt Color Graphics2D Font])
+  (:import [java.awt.geom Rectangle2D$Double AffineTransform])
+  (:import [java.awt Color Graphics2D Graphics Font])
   (:import [javax.imageio ImageIO])
   (:require [game.state :as state]
             [clojure.java.io :as io]))
@@ -23,7 +23,7 @@
 (def shooter-image (get-image-from-file "resources/shooter.png"))
 
 (defn draw-image [image x y w h path]
-    (.drawImage image path w h x y nil))
+    (.drawImage ^Graphics image path w h x y nil))
 
 (defn new-image [x y]
   (let [image (BufferedImage. x y BufferedImage/TYPE_INT_RGB)
@@ -31,7 +31,7 @@
     (doto ^Graphics2D graphics
       (.setColor Color/WHITE)
       (.fill (Rectangle2D$Double. 0 0 x y)))
-    (draw-image graphics x y 0 0 bg)
+    (draw-image ^Graphics graphics x y 0 0 bg)
     image))
 
 (defn draw-shape [image color shape]
@@ -62,19 +62,19 @@
         x (- (:x entity) (/ (:width entity) 2))
         y (- (:y entity) (/ (:height entity) 2))
         graphics (.createGraphics image)
-        old-angle (.getTransform graphics)]
-    (.translate graphics (:x entity) (:y entity))
-    (.rotate graphics angle)
-    (.translate graphics (- (:x entity)) (- (:y entity)))
-    (draw-image graphics (:width entity) (:height entity) x y disp)
-    (.setTransform graphics old-angle)
+        old-angle (.getTransform ^Graphics2D graphics)]
+    (.translate ^Graphics graphics (:x entity) (:y entity))
+    (.rotate ^Graphics2D graphics angle)
+    (.translate ^Graphics graphics (- (:x entity)) (- (:y entity)))
+    (draw-image ^Graphics graphics (:width entity) (:height entity) x y disp)
+    (.setTransform ^Graphics2D graphics ^AffineTransform old-angle)
     image))
 
 (defn draw-image-ent [image entity disp]
   (let [x (- (:x entity) (/ (:width entity) 2))
         y (- (:y entity) (/ (:height entity) 2))
         graphics (.createGraphics image)]
-    (draw-image graphics (:width entity) (:height entity) x y disp) 
+    (draw-image ^Graphics graphics (:width entity) (:height entity) x y disp) 
     image))
 
 (defmulti draw (fn [image entity] [(:type entity)]))
