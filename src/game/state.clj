@@ -1,6 +1,7 @@
 (ns game.state
   (:gen-class)
-  (:require [game.entities :as e]))
+  (:require [game.entities :as e]
+            [game.state :as state]))
 
 (def bounds {:min-x 0.0 :min-y 0.0 :max-x 500.0 :max-y 500.0})
 
@@ -47,12 +48,14 @@
 (defn reset []
   (default-entity-state))
 
-(defn save-state [state]
-  (let [new-state {:e-proj (:e-proj state) :p-proj (:p-proj state)
-                   :player (:player state) :enemies (:enemies state)
-                   :timestamp (inc (:timestamp state))
-                   :bounds (:bounds state) :score (:score state)}]
-    (reset! entity-state new-state)))
+(defn clean-state [state]
+  (-> state
+      (assoc :timestamp (inc (:timestamp state)))
+      (dissoc :inputs)
+      (dissoc :mouse)))
+
+(defn save-state [state] 
+    (reset! entity-state (clean-state state)))
 
 (defn update-state [state]
   (if (contains? (:inputs state) :reset)

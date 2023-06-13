@@ -14,6 +14,12 @@
         vec-y (+ (* (Math/sin angle) speed) (* (Math/cos angle) speed))]
     {:vec-x vec-x :vec-y vec-y}))
 
+(defn damage-entity [damage entity]
+  (assoc entity :health (- (:health entity) damage)))
+
+(defn update-timestamp [entity timestamp]
+  (merge entity {:last-shot timestamp}))
+
 ; ENTITIES DEFINITION
 (defn entity [x y health width height speed type & [more]]
   (merge {:x x :y y :health health :speed speed
@@ -37,27 +43,6 @@
 ; END ENTITY DEFINITION
 
 ; MOVEMENT RELATED
-(defmulti create-projectile (fn [entity & []] [(:type entity)]))
-
-(defmethod create-projectile [:player] [entity mousePosition]
-  (let [proj (projectile (:x entity) (:y entity) 25 10 5 nil)
-        vec (gen-vector proj mousePosition)]
-    (merge proj vec)))
-
-(defmethod create-projectile [:shooter] [entity mousePosition]
-  (let [proj (projectile (:x entity) (:y entity) 15 30 1.5 nil)
-        vec (gen-vector proj mousePosition)]
-    (merge proj vec)))
-
-(defmethod create-projectile [:kamikaze] [entity target]
-  (let [x (:x entity)
-        y (:y entity)
-        vec (gen-vector entity target)]
-    (projectile x y 1 50 0 vec (+ (:last-shot entity) 2))))
-
-(defn damage-entity [damage entity]
-  (assoc entity :health (- (:health entity) damage)))
-
 (defn new-position [entity vector]
   {:x (+ (:x entity) (:vec-x vector))
    :y (+ (:y entity) (:vec-y vector))})
@@ -66,9 +51,6 @@
   (-> entity 
       (assoc :x (:x pos))
       (assoc :y (:y pos))))
-
-(defn update-timestamp [entity timestamp]
-  (merge entity {:last-shot timestamp}))
 
 (defn correct-position [entity bounds]
   (let [new-x (min (:max-x bounds) (max (:min-x bounds) (:x entity)))
@@ -95,3 +77,23 @@
 
 (defmethod move [:shooter] [entity vector]
   (default-move entity vector))
+; END MOVEMENT
+
+; PROJECTILE CREATION
+(defmulti create-projectile (fn [entity & []] [(:type entity)]))
+
+(defmethod create-projectile [:player] [entity mousePosition]
+  (let [proj (projectile (:x entity) (:y entity) 25 10 5 nil)
+        vec (gen-vector proj mousePosition)]
+    (merge proj vec)))
+
+(defmethod create-projectile [:shooter] [entity mousePosition]
+  (let [proj (projectile (:x entity) (:y entity) 15 30 1.5 nil)
+        vec (gen-vector proj mousePosition)]
+    (merge proj vec)))
+
+(defmethod create-projectile [:kamikaze] [entity target]
+  (let [x (:x entity)
+        y (:y entity)
+        vec (gen-vector entity target)]
+    (projectile x y 1 50 0 vec (+ (:last-shot entity) 2))))

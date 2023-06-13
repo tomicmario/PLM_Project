@@ -5,7 +5,6 @@
   (:import [java.awt.event KeyAdapter KeyEvent MouseEvent])
   (:import [javax.swing.event MouseInputAdapter])
   (:require [game.state :as im]
-            [game.swing :as display]
             [game.renderer :as r]))
 
 (def ^:private frame (JFrame.))
@@ -14,11 +13,11 @@
 
 (defn set-direction [fn event] ; A bit of a hack, because switch case didn't want to work
   (let  [keycode (.getKeyCode event)]
-    (if (= keycode KeyEvent/VK_W) (fn :up) nil)
-    (if (= keycode KeyEvent/VK_S) (fn :down) nil)
-    (if (= keycode KeyEvent/VK_A) (fn :left) nil)
-    (if (= keycode KeyEvent/VK_D) (fn :right) nil)
-    (if (= keycode KeyEvent/VK_R) (fn :reset) nil)))
+    (when (= keycode KeyEvent/VK_W) (fn :up))
+    (when (= keycode KeyEvent/VK_S) (fn :down))
+    (when (= keycode KeyEvent/VK_A) (fn :left))
+    (when (= keycode KeyEvent/VK_D) (fn :right))
+    (when (= keycode KeyEvent/VK_R) (fn :reset))))
 
 (def mouse-listener
   (proxy [MouseInputAdapter] []
