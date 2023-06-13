@@ -28,7 +28,7 @@
     (closer-than-distance? a b max-dist )))
 
 (defn get-collide-damage [collisions]
-  (reduce + (mapv (fn [x] (:health x)) collisions)))
+  (reduce + (mapv :health collisions)))
 
 ; returns a map containing the entity and the projectiles that collided with it
 (defn get-collision-data [entity projectiles]
@@ -41,8 +41,8 @@
 
 (defn remove-collided [projectiles collided] ; requires the map of get-collision data on collided
   (let [colliding-proj (into #{} collided)
-        has-collided? (fn [p] (not (contains? colliding-proj p)))]
-    (filterv has-collided? projectiles)))
+        has-not-collided? (fn [p] (not (contains? colliding-proj p)))]
+    (filterv has-not-collided? projectiles)))
 
 (defn treat-collision-player [state]
   (let [collided-proj (get-collision-data (:player state) (:e-proj state))
@@ -72,13 +72,13 @@
     (if (nil? ttl) true (< (:timestamp state) ttl))))
 
 (defn clean-projectiles [state]
-  (let [condition (fn [p] (and (proj-valid? p state) (in-bounds? p state)))]
+  (let [is-valid? (fn [p] (and (proj-valid? p state) (in-bounds? p state)))]
     (-> state
-        (assoc :p-proj (filterv condition (:p-proj state)))
-        (assoc :e-proj (filterv condition (:e-proj state))))))
+        (assoc :p-proj (filterv is-valid? (:p-proj state)))
+        (assoc :e-proj (filterv is-valid? (:e-proj state))))))
 
 (defn clean-enemies [state]
-  (let [updated-enemies (filterv (fn [e] (< 0 (:health e))) (:enemies state))
+  (let [updated-enemies (filterv e/is-alive? (:enemies state))
         killed (- (count (:enemies state)) (count updated-enemies)) 
         new-score (+ (:score state) killed)]
     (-> state
@@ -100,8 +100,8 @@
         (assoc :enemies (mapv (fn [e] (e/correct-position e (:bounds state))) enemies)))))
 
 (defn move-proj [state]
-  (let [e-proj (mapv (fn [p] (e/move p)) (:e-proj state))
-        p-proj (mapv (fn [p] (e/move p)) (:p-proj state))]
+  (let [e-proj (mapv e/move (:e-proj state))
+        p-proj (mapv e/move (:p-proj state))]
     (-> state
         (assoc :e-proj e-proj)
         (assoc :p-proj p-proj))))
