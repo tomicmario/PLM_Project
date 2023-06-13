@@ -91,46 +91,6 @@
       (clean-enemies)))
 ; END DEAD ENTITY REMOVAL
 
-; ENTITY MOVING
-(defn correct-positions [state]
-  (let [player (:player state)
-        enemies (:enemies state)]
-    (-> state
-        (assoc :player (e/correct-position player (:bounds state)))
-        (assoc :enemies (mapv (fn [e] (e/correct-position e (:bounds state))) enemies)))))
-
-(defn move-proj [state]
-  (let [e-proj (mapv e/move (:e-proj state))
-        p-proj (mapv e/move (:p-proj state))]
-    (-> state
-        (assoc :e-proj e-proj)
-        (assoc :p-proj p-proj))))
-
-(defn move-enemies [state]
-  (let [enemies (map (fn [e] (e/move e (e/gen-vector e (:player state)))) (:enemies state))]
-    (assoc state :enemies enemies)))
-
-(defn input-to-vector [player inputs] ; generates vector based on the inputs, for the player
-  (let [speed (:speed player)
-        y (- (if (contains? inputs :down) speed 0) (if (contains? inputs :up) speed 0))
-        x (- (if (contains? inputs :right) speed 0) (if (contains? inputs :left) speed 0))]
-    {:vec-x x :vec-y y}))
-
-(defn move-player [state]
-  (let [player (:player state)
-        vec (input-to-vector player (:inputs state)) 
-        vector (if (e/is-alive? player) vec {:vec-x 0 :vec-y 0})
-        updated-player (e/move player vector)]
-    (assoc state :player updated-player)))
-
-(defn move-entities [state]
-  (-> state
-      (move-proj)
-      (move-player)
-      (move-enemies)
-      (correct-positions)))
-; END ENTITY MOVING
-
 ; SHOOTING
 (defmulti get-target (fn [entity & []] [(:type entity)]))
 
@@ -190,21 +150,67 @@
       (enemies-shoot)))
 ; END ENTITY SHOOTING
 
+; ENTITY MOVING
+(defn correct-positions [state]
+  (let [corrected-entity (fn [e] (e/correct-position e (:bounds state)))]
+    (-> state
+        (assoc :player (e/correct-position (:player state) (:bounds state)))
+        (assoc :enemies (mapv corrected-entity (:enemies state))))))
+
+(defn move-proj [state]
+  (let [e-proj (mapv e/move (:e-proj state))
+        p-proj (mapv e/move (:p-proj state))]
+    (-> state
+        (assoc :e-proj e-proj)
+        (assoc :p-proj p-proj))))
+
+(defn move-enemies [state]
+  (let [get-entity-vec (fn [e] (e/gen-vector e (get-target e state)))
+        move-enemy (fn [e] (e/move e (get-entity-vec e)))
+        enemies (map move-enemy (:enemies state))]
+    (assoc state :enemies enemies)))
+
+(defn input-to-vector [player inputs] ; generates vector based on the inputs, for the player
+  (let [speed (:speed player)
+        y (- (if (contains? inputs :down) speed 0) (if (contains? inputs :up) speed 0))
+        x (- (if (contains? inputs :right) speed 0) (if (contains? inputs :left) speed 0))]
+    {:vec-x x :vec-y y}))
+
+(defn move-player [state]
+  (let [player (:player state)
+        vec (input-to-vector player (:inputs state))
+        vector (if (e/is-alive? player) vec {:vec-x 0 :vec-y 0})
+        updated-player (e/move player vector)]
+    (assoc state :player updated-player)))
+
+(defn move-entities [state]
+  (-> state
+      (move-proj)
+      (move-player)
+      (move-enemies)
+      (correct-positions)))
+; END ENTITY MOVING
+
 ; SPAWN LOGIC
-(defn spawn-coordinates [x y player exclusion]
-  (let [new-x (if (> (- (:x player) (/ exclusion 2)) x) x
-                (+ x exclusion))
-        new-y (if (> (- (:y player) (/ exclusion 2)) y) y
-                (+ y exclusion))]
+(defn spawn-coordinates [bounds player exclusion]
+  (let [diameter (* exclusion 2)
+        x (rand (- (:max-x bounds) diameter))
+        y (rand (- (:max-y bounds) diameter))
+        new-x (if (> (- (:x player) exclusion) x) x
+                  (+ x diameter))
+        new-y (if (> (- (:y player) exclusion) y) y
+                  (+ y diameter))]
     {:x new-x :y new-y}))
 
 (defn rand-coordinates [state]
-  ; returns a coordinate not present withing 50 units from the player
+  ; returns a coordinate not present withing a given amount of units from the player
   (let [bounds (:bounds state)
         player (:player state)
-        rand-x (rand (- (:max-x bounds) exclusion-radius))
-        rand-y (rand (- (:max-y bounds) exclusion-radius))]
-    (spawn-coordinates rand-x rand-y player exclusion-radius)))
+        rand-x (rand (:max-x bounds))
+        rand-y (rand (:max-y bounds))
+        close-enough? (closer-than-distance? {:x rand-x :y rand-y} player exclusion-radius)]
+    (if close-enough? (spawn-coordinates bounds player exclusion-radius)
+        {:x rand-x :y rand-y})))
 
 (defn add-enemy [state]
   (if (< (count (:enemies state)) max-enemy)
